@@ -3,16 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ImageUploader from "@/components/ImageUploader";
 import ResultDisplay from "@/components/ResultDisplay";
+import ClerkAuth from "@/components/ClerkAuth";
+import { applyWasmEffect, type WasmEffect } from "@/lib/wasm-image";
 import {
-  Eye, ScanSearch, FileText, GitCompare, Sparkles, Eraser, Palette, Wand2,
+  Eye, ScanSearch, FileText, GitCompare, Sparkles, Eraser, Palette, Wand2, Cpu, Zap,
 } from "lucide-react";
 
-type TabId = "analyze" | "detect" | "ocr" | "compare" | "enhance" | "inpaint" | "style" | "generate";
+type TabId = "analyze" | "detect" | "ocr" | "compare" | "enhance" | "inpaint" | "style" | "generate" | "wasm" | "onnx";
 
 const tabs: { id: TabId; label: string; icon: React.ElementType; needsImage: boolean; needsSecondImage?: boolean; needsPrompt?: boolean }[] = [
   { id: "analyze", label: "Analyze", icon: Eye, needsImage: true },
@@ -23,6 +26,22 @@ const tabs: { id: TabId; label: string; icon: React.ElementType; needsImage: boo
   { id: "inpaint", label: "Inpaint", icon: Eraser, needsImage: true, needsPrompt: true },
   { id: "style", label: "Style", icon: Palette, needsImage: true, needsPrompt: true },
   { id: "generate", label: "Generate", icon: Wand2, needsImage: false, needsPrompt: true },
+  { id: "wasm", label: "WASM FX", icon: Zap, needsImage: true },
+  { id: "onnx", label: "ONNX AI", icon: Cpu, needsImage: true },
+];
+
+const wasmEffects: { value: WasmEffect; label: string }[] = [
+  { value: "grayscale", label: "Grayscale" },
+  { value: "blur", label: "Gaussian Blur" },
+  { value: "sharpen", label: "Sharpen" },
+  { value: "brighten", label: "Brighten" },
+  { value: "contrast", label: "Contrast" },
+  { value: "sepia", label: "Sepia" },
+  { value: "invert", label: "Invert" },
+  { value: "flipH", label: "Flip Horizontal" },
+  { value: "flipV", label: "Flip Vertical" },
+  { value: "solarize", label: "Solarize" },
+  { value: "emboss", label: "Emboss" },
 ];
 
 const Workspace = () => {
@@ -33,6 +52,7 @@ const Workspace = () => {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ type: "text" | "image"; content: string } | null>(null);
+  const [wasmEffect, setWasmEffect] = useState<WasmEffect>("grayscale");
 
   const currentTab = tabs.find((t) => t.id === activeTab)!;
 
@@ -57,6 +77,36 @@ const Workspace = () => {
     setLoading(true);
     setResult(null);
     try {
+      // Client-side WASM processing
+      if (activeTab === "wasm") {
+        if (!image1) throw new Error("Upload an image first");
+        const start = performance.now();
+        const resultBase64 = await applyWasmEffect(image1, wasmEffect);
+        const elapsed = Math.round(performance.now() - start);
+        toast.success(`WASM processed in ${elapsed}ms`);
+        setResult({ type: "image", content: resultBase64 });
+        return;
+      }
+
+      // Client-side ONNX inference
+      if (activeTab === "onnx") {
+        if (!image1) throw new Error("Upload an image first");
+        const { classifyImage } = await import("@/lib/onnx-inference");
+        const start = performance.now();
+        const predictions = await classifyImage(image1);
+        const elapsed = Math.round(performance.now() - start);
+        const text = predictions
+          .map((p, i) => `${i + 1}. ${p.label} — ${(p.score * 100).toFixed(1)}%`)
+          .join("\n");
+        toast.success(`ONNX inference in ${elapsed}ms`);
+        setResult({
+          type: "text",
+          content: `ONNX Runtime Web — MobileNet v2 Classification\nProcessed in ${elapsed}ms\n\nTop predictions:\n${text}\n\n(Place your own .onnx model in public/models/ for custom inference)`,
+        });
+        return;
+      }
+
+      // Server-side AI processing
       const body: Record<string, string> = { action: activeTab };
       if (image1) body.image1 = image1;
       if (image2) body.image2 = image2;
@@ -88,10 +138,11 @@ const Workspace = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b">
-        <div className="container flex h-14 items-center gap-4">
+        <div className="container flex h-14 items-center justify-between gap-4">
           <button onClick={() => navigate("/")} className="text-sm font-semibold tracking-tight hover:opacity-70">
             AI Image Toolkit
           </button>
+          <ClerkAuth />
         </div>
       </header>
 
@@ -146,6 +197,30 @@ const Workspace = () => {
                       onChange={(e) => setPrompt(e.target.value)}
                       rows={3}
                     />
+                  )}
+
+                  {/* WASM effect selector */}
+                  {t.id === "wasm" && (
+                    <Select value={wasmEffect} onValueChange={(v) => setWasmEffect(v as WasmEffect)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose effect" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {wasmEffects.map((e) => (
+                          <SelectItem key={e.value} value={e.value}>
+                            {e.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  {/* ONNX info */}
+                  {t.id === "onnx" && (
+                    <p className="text-xs text-muted-foreground">
+                      Runs MobileNet v2 classification via ONNX Runtime Web (WASM backend).
+                      Place custom <code>.onnx</code> models in <code>public/models/</code>.
+                    </p>
                   )}
 
                   <Button

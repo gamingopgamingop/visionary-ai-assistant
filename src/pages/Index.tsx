@@ -1,15 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import ClerkAuth from "@/components/ClerkAuth";
 import {
-  Eye,
-  ScanSearch,
-  FileText,
-  GitCompare,
-  Sparkles,
-  Eraser,
-  Palette,
-  Wand2,
+  Eye, ScanSearch, FileText, GitCompare, Sparkles, Eraser, Palette, Wand2, Zap, Cpu,
 } from "lucide-react";
 
 const features = [
@@ -21,6 +15,8 @@ const features = [
   { icon: Eraser, title: "Inpaint / Repair", desc: "Fill in missing or damaged parts" },
   { icon: Palette, title: "Style Transfer", desc: "Restyle images in any artistic style" },
   { icon: Wand2, title: "Generate", desc: "Create new images from text descriptions" },
+  { icon: Zap, title: "WASM FX", desc: "Instant client-side image effects via WebAssembly" },
+  { icon: Cpu, title: "ONNX AI", desc: "Run AI models in-browser with ONNX Runtime WASM" },
 ];
 
 const Index = () => {
@@ -31,9 +27,12 @@ const Index = () => {
       <header className="border-b">
         <div className="container flex h-16 items-center justify-between">
           <h2 className="text-lg font-semibold tracking-tight">AI Image Toolkit</h2>
-          <Button onClick={() => navigate("/workspace")} size="sm">
-            Open Workspace
-          </Button>
+          <div className="flex items-center gap-3">
+            <ClerkAuth />
+            <Button onClick={() => navigate("/workspace")} size="sm">
+              Open Workspace
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -44,7 +43,7 @@ const Index = () => {
             All-in-one AI-powered image tools
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
-            Analyze, enhance, generate, and transform images — all from one clean workspace.
+            Analyze, enhance, generate, and transform images — powered by AI and WebAssembly.
           </p>
           <Button size="lg" className="mt-8" onClick={() => navigate("/workspace")}>
             Get Started
@@ -53,7 +52,7 @@ const Index = () => {
 
         {/* Feature grid */}
         <section className="container pb-20">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {features.map((f) => (
               <Card
                 key={f.title}
