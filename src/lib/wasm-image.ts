@@ -28,7 +28,8 @@ async function base64ToPhotonImage(base64: string) {
       const img = new Image();
       img.onload = () => {
         const canvas = imageToCanvas(img);
-        resolve(photon.PhotonImage.new_from_canvas(canvas));
+        const ctx = canvas.getContext("2d")!;
+        resolve(photon.open_image(canvas, ctx));
       };
       img.onerror = reject;
       img.src = base64;
@@ -43,7 +44,8 @@ function photonImageToBase64(
   const canvas = document.createElement("canvas");
   canvas.width = pImg.get_width();
   canvas.height = pImg.get_height();
-  photon.putImageData(canvas, pImg);
+  const ctx = canvas.getContext("2d")!;
+  photon.putImageData(canvas, ctx, pImg);
   return canvas.toDataURL("image/png");
 }
 
