@@ -65,7 +65,9 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
     "vite-plugin-top-level-await": "^1.6.0",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",    
+    "vite-plugin-wasm": "^3.6.0"
+
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
