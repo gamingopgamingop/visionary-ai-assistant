@@ -411,7 +411,7 @@
 
     "@swc/types": ["@swc/types@0.1.23", "", { "dependencies": { "@swc/counter": "^0.1.3" } }, "sha512-u1iIVZV9Q0jxY+yM2vw/hZGDNudsN85bBpTqzAQ9rzkxW9D+e3aEM4Han+ow518gSewkXgjmEK0BD79ZcNVgPw=="],
 
-    "@swc/wasm": ["@swc/wasm@1.15.26", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@swc/wasm/-/wasm-1.15.26.tgz", {}, "sha512-gw8wUGvkNDd+34IOEYg3wxKMAEEoDRC75cc/eEdopPttljJZs/nC3yjsizLOBMUUeXz9q4VHWZWDV8WkEVBx4A=="],
+    "@swc/wasm": ["@swc/wasm@1.15.30", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@swc/wasm/-/wasm-1.15.30.tgz", {}, "sha512-Z/27kZFJpKzmTgcOAlMrQZ3WEZOJDqk879wSY9SEuLtMVHxEZ9t4R3rGNUGj9e7ldY6GP6DCvN7Q0m7UTrhToA=="],
 
     "@tailwindcss/typography": ["@tailwindcss/typography@0.5.16", "", { "dependencies": { "lodash.castarray": "^4.4.0", "lodash.isplainobject": "^4.0.6", "lodash.merge": "^4.6.2", "postcss-selector-parser": "6.0.10" }, "peerDependencies": { "tailwindcss": ">=3.0.0 || insiders || >=4.0.0-alpha.20 || >=4.0.0-beta.1" } }, "sha512-0wDLwCVF5V3x3b1SGXPCDcdsbDHMBe+lkFzBRaHeLvNi+nrrnZ1lA18u+OTWO8iSWU2GxUOCvlXtDuqftc1oiA=="],
 
