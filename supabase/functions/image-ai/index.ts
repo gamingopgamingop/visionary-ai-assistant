@@ -15,7 +15,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const { action, image1, image2, prompt } = await req.json();
+    const { action, image1, image2, prompt, params } = await req.json();
 
     // Text-based analysis actions use gemini-3-flash-preview
     if (["analyze", "detect", "ocr", "compare", "imageToPrompt"].includes(action)) {
@@ -24,7 +24,7 @@ serve(async (req) => {
 
     // Image generation/editing actions use gemini-2.5-flash-image
     if (["enhance", "inpaint", "style", "generate"].includes(action)) {
-      return await handleImageAction(action, image1, prompt, LOVABLE_API_KEY);
+      return await handleImageAction(action, image1, prompt, params, LOVABLE_API_KEY);
     }
 
     return jsonResp({ error: "Unknown action" }, 400);
@@ -75,13 +75,48 @@ async function handleTextAction(action: string, image1: string, image2: string |
   return jsonResp({ resultText: text });
 }
 
-async function handleImageAction(action: string, image1: string | null, prompt: string | null, apiKey: string) {
+async function handleImageAction(
+  action: string,
+  image1: string | null,
+  prompt: string | null,
+  params: { style?: string; aspect?: string; quality?: string } | undefined,
+  apiKey: string,
+) {
+  const styleMap: Record<string, string> = {
+    none: "",
+    photorealistic: "photorealistic, ultra-detailed, sharp focus, natural lighting",
+    cinematic: "cinematic lighting, film grain, dramatic composition, anamorphic look",
+    anime: "anime style, vibrant colors, clean line art, cel shading",
+    oil_painting: "oil painting on canvas, visible brush strokes, rich color palette",
+    watercolor: "watercolor painting, soft edges, flowing pigments, paper texture",
+    "3d_render": "3D render, octane render, physically-based materials, soft global illumination",
+    pixel_art: "pixel art, 16-bit retro game style, limited palette",
+    line_art: "clean line art, black ink on white background, no shading",
+    minimalist: "minimalist composition, lots of negative space, simple geometric forms",
+  };
+  const qualityMap: Record<string, string> = {
+    draft: "",
+    standard: "high quality, well-composed",
+    high: "ultra high detail, intricate, masterpiece quality, sharp focus",
+  };
+
+  const styleSuffix = params?.style ? styleMap[params.style] || "" : "";
+  const qualitySuffix = params?.quality ? qualityMap[params.quality] || "" : "";
+  const aspectSuffix =
+    params?.aspect && params.aspect !== "1:1" ? `Aspect ratio: ${params.aspect}.` : "";
+
+  const decorate = (base: string) =>
+    [base, styleSuffix, qualitySuffix, aspectSuffix].filter(Boolean).join(" — ");
+
   const instructions: Record<string, string> = {
-    enhance:
+    enhance: decorate(
       "Enhance this image: increase sharpness, improve clarity, upscale quality, fix noise. Return the improved version of the same image.",
-    inpaint: `Repair and inpaint this image. ${prompt || "Fix any damaged or missing areas."}`,
-    style: `Apply this artistic style to the image: ${prompt || "oil painting style"}. Keep the subject the same but transform the visual style.`,
-    generate: prompt || "Generate a beautiful landscape image",
+    ),
+    inpaint: decorate(`Repair and inpaint this image. ${prompt || "Fix any damaged or missing areas."}`),
+    style: decorate(
+      `Apply this artistic style to the image: ${prompt || "oil painting style"}. Keep the subject the same but transform the visual style.`,
+    ),
+    generate: decorate(prompt || "Generate a beautiful landscape image"),
   };
 
   const userContent: any[] = [{ type: "text", text: instructions[action] }];
