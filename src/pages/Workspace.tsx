@@ -10,11 +10,14 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ImageUploader from "@/components/ImageUploader";
-import ResultDisplay from "@/components/ResultDisplay";
+import ResultDisplay, { type ResultState } from "@/components/ResultDisplay";
 import ClerkAuth from "@/components/ClerkAuth";
+import HistoryPanel from "@/components/HistoryPanel";
+import PromptParams, { DEFAULT_PROMPT_PARAMS, type PromptParamsValue } from "@/components/PromptParams";
 import { applyWasmEffect, type WasmEffect } from "@/lib/wasm-image";
-import { extractPalette, type PaletteColor } from "@/lib/color-palette";
+import { extractPalette } from "@/lib/color-palette";
 import { editImage, type ImageFormat } from "@/lib/basic-editor";
+import { addHistory, type HistoryItem } from "@/lib/history";
 import {
   Eye, ScanSearch, FileText, GitCompare, Sparkles, Eraser, Palette, Wand2, Cpu, Zap,
   Scissors, Droplet, MessageSquareQuote, Crop,
@@ -27,22 +30,22 @@ type TabId =
 const tabs: {
   id: TabId; label: string; icon: React.ElementType;
   needsImage: boolean; needsSecondImage?: boolean; needsPrompt?: boolean;
-  group: "ai" | "wasm" | "edit";
+  hasPromptParams?: boolean;
 }[] = [
-  { id: "analyze", label: "Analyze", icon: Eye, needsImage: true, group: "ai" },
-  { id: "detect", label: "Detect", icon: ScanSearch, needsImage: true, group: "ai" },
-  { id: "ocr", label: "OCR", icon: FileText, needsImage: true, group: "ai" },
-  { id: "compare", label: "Compare", icon: GitCompare, needsImage: true, needsSecondImage: true, group: "ai" },
-  { id: "enhance", label: "Enhance", icon: Sparkles, needsImage: true, group: "ai" },
-  { id: "inpaint", label: "Inpaint", icon: Eraser, needsImage: true, needsPrompt: true, group: "ai" },
-  { id: "style", label: "Style", icon: Palette, needsImage: true, needsPrompt: true, group: "ai" },
-  { id: "generate", label: "Generate", icon: Wand2, needsImage: false, needsPrompt: true, group: "ai" },
-  { id: "imageToPrompt", label: "Image→Prompt", icon: MessageSquareQuote, needsImage: true, group: "ai" },
-  { id: "bgRemove", label: "BG Remove", icon: Scissors, needsImage: true, group: "wasm" },
-  { id: "palette", label: "Palette", icon: Droplet, needsImage: true, group: "wasm" },
-  { id: "wasm", label: "WASM FX", icon: Zap, needsImage: true, group: "wasm" },
-  { id: "onnx", label: "ONNX AI", icon: Cpu, needsImage: true, group: "wasm" },
-  { id: "editor", label: "Editor", icon: Crop, needsImage: true, group: "edit" },
+  { id: "analyze", label: "Analyze", icon: Eye, needsImage: true },
+  { id: "detect", label: "Detect", icon: ScanSearch, needsImage: true },
+  { id: "ocr", label: "OCR", icon: FileText, needsImage: true },
+  { id: "compare", label: "Compare", icon: GitCompare, needsImage: true, needsSecondImage: true },
+  { id: "enhance", label: "Enhance", icon: Sparkles, needsImage: true, hasPromptParams: true },
+  { id: "inpaint", label: "Inpaint", icon: Eraser, needsImage: true, needsPrompt: true, hasPromptParams: true },
+  { id: "style", label: "Style", icon: Palette, needsImage: true, needsPrompt: true, hasPromptParams: true },
+  { id: "generate", label: "Generate", icon: Wand2, needsImage: false, needsPrompt: true, hasPromptParams: true },
+  { id: "imageToPrompt", label: "Image→Prompt", icon: MessageSquareQuote, needsImage: true },
+  { id: "bgRemove", label: "BG Remove", icon: Scissors, needsImage: true },
+  { id: "palette", label: "Palette", icon: Droplet, needsImage: true },
+  { id: "wasm", label: "WASM FX", icon: Zap, needsImage: true },
+  { id: "onnx", label: "ONNX AI", icon: Cpu, needsImage: true },
+  { id: "editor", label: "Editor", icon: Crop, needsImage: true },
 ];
 
 const wasmEffects: { value: WasmEffect; label: string }[] = [
@@ -59,12 +62,6 @@ const wasmEffects: { value: WasmEffect; label: string }[] = [
   { value: "emboss", label: "Emboss" },
 ];
 
-type ResultState =
-  | { type: "text"; content: string }
-  | { type: "image"; content: string }
-  | { type: "palette"; content: PaletteColor[] }
-  | null;
-
 const Workspace = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabId>("analyze");
@@ -72,8 +69,12 @@ const Workspace = () => {
   const [image2, setImage2] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState<string>("");
+  const [loadingProgress, setLoadingProgress] = useState<number | undefined>(undefined);
   const [result, setResult] = useState<ResultState>(null);
   const [wasmEffect, setWasmEffect] = useState<WasmEffect>("grayscale");
+  const [promptParams, setPromptParams] = useState<PromptParamsValue>(DEFAULT_PROMPT_PARAMS);
+  const [historyKey, setHistoryKey] = useState(0);
 
   // Editor controls
   const [editWidth, setEditWidth] = useState<string>("");
@@ -98,21 +99,42 @@ const Workspace = () => {
     else setImage2(base64);
   }, []);
 
+  const saveToHistory = async (
+    tool: TabId,
+    toolLabel: string,
+    res: NonNullable<ResultState>,
+  ) => {
+    const fullResult =
+      res.type === "palette"
+        ? JSON.stringify(res.content.map((c) => c.hex))
+        : res.content;
+    await addHistory({
+      tool,
+      toolLabel,
+      resultType: res.type,
+      fullResult,
+      prompt: prompt || undefined,
+    });
+    setHistoryKey((k) => k + 1);
+  };
+
   const handleProcess = async () => {
     setLoading(true);
+    setLoadingMsg("Processing…");
+    setLoadingProgress(undefined);
     setResult(null);
     try {
+      let res: NonNullable<ResultState> | null = null;
+
       if (activeTab === "wasm") {
         if (!image1) throw new Error("Upload an image first");
         const start = performance.now();
         const out = await applyWasmEffect(image1, wasmEffect);
         toast.success(`WASM processed in ${Math.round(performance.now() - start)}ms`);
-        setResult({ type: "image", content: out });
-        return;
-      }
-
-      if (activeTab === "onnx") {
+        res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "onnx") {
         if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading ONNX model…");
         const { classifyImage } = await import("@/lib/onnx-inference");
         const start = performance.now();
         const predictions = await classifyImage(image1);
@@ -121,32 +143,32 @@ const Workspace = () => {
           .map((p, i) => `${i + 1}. ${p.label} — ${(p.score * 100).toFixed(1)}%`)
           .join("\n");
         toast.success(`ONNX inference in ${elapsed}ms`);
-        setResult({
+        res = {
           type: "text",
-          content: `ONNX Runtime Web — MobileNet v2 Classification\nProcessed in ${elapsed}ms\n\nTop predictions:\n${text}\n\n(Place your own .onnx model in public/models/ for custom inference)`,
-        });
-        return;
-      }
-
-      if (activeTab === "bgRemove") {
+          content: `ONNX Runtime Web — MobileNet v2 Classification\nProcessed in ${elapsed}ms\n\nTop predictions:\n${text}`,
+        };
+      } else if (activeTab === "bgRemove") {
         if (!image1) throw new Error("Upload an image first");
-        toast.info("Loading background removal model (first run may take a moment)…");
-        const start = performance.now();
+        setLoadingMsg("Preparing background removal…");
+        setLoadingProgress(0);
         const { removeBackground } = await import("@/lib/bg-remove");
-        const out = await removeBackground(image1);
+        const start = performance.now();
+        const out = await removeBackground(image1, ({ stage, progress, message }) => {
+          const labels = {
+            "loading-model": "Downloading model",
+            "segmenting": "Detecting subject",
+            "compositing": "Compositing",
+          } as const;
+          setLoadingMsg(message || labels[stage]);
+          setLoadingProgress(progress);
+        });
         toast.success(`Background removed in ${Math.round(performance.now() - start)}ms`);
-        setResult({ type: "image", content: out });
-        return;
-      }
-
-      if (activeTab === "palette") {
+        res = { type: "image", content: out, original: image1, checkerBg: true };
+      } else if (activeTab === "palette") {
         if (!image1) throw new Error("Upload an image first");
         const colors = await extractPalette(image1, 8);
-        setResult({ type: "palette", content: colors });
-        return;
-      }
-
-      if (activeTab === "editor") {
+        res = { type: "palette", content: colors };
+      } else if (activeTab === "editor") {
         if (!image1) throw new Error("Upload an image first");
         const out = await editImage(image1, {
           width: editWidth ? parseInt(editWidth) : undefined,
@@ -156,26 +178,36 @@ const Workspace = () => {
           quality: parseFloat(editQuality),
         });
         toast.success("Image processed");
-        setResult({ type: "image", content: out });
-        return;
+        res = { type: "image", content: out, original: image1 };
+      } else {
+        // Server-side AI
+        const body: Record<string, unknown> = { action: activeTab };
+        if (image1) body.image1 = image1;
+        if (image2) body.image2 = image2;
+        if (prompt) body.prompt = prompt;
+        if (currentTab.hasPromptParams) body.params = promptParams;
+
+        setLoadingMsg("Calling AI…");
+        const { data, error } = await supabase.functions.invoke("image-ai", { body });
+        if (error) throw error;
+
+        if (data.resultImage) {
+          res = { type: "image", content: data.resultImage, original: image1 };
+        } else {
+          res = { type: "text", content: data.resultText };
+        }
       }
 
-      // Server-side AI processing
-      const body: Record<string, string> = { action: activeTab };
-      if (image1) body.image1 = image1;
-      if (image2) body.image2 = image2;
-      if (prompt) body.prompt = prompt;
-
-      const { data, error } = await supabase.functions.invoke("image-ai", { body });
-      if (error) throw error;
-
-      if (data.resultImage) setResult({ type: "image", content: data.resultImage });
-      else setResult({ type: "text", content: data.resultText });
+      if (res) {
+        setResult(res);
+        await saveToHistory(activeTab, currentTab.label, res);
+      }
     } catch (e: any) {
       console.error(e);
       toast.error(e.message || "Something went wrong");
     } finally {
       setLoading(false);
+      setLoadingProgress(undefined);
     }
   };
 
@@ -186,6 +218,33 @@ const Workspace = () => {
     setResult(null);
   };
 
+  const handleRestore = (item: HistoryItem) => {
+    // Switch to the originating tool and restore the result
+    setActiveTab(item.tool as TabId);
+    if (item.resultType === "image") {
+      setResult({ type: "image", content: item.fullResult });
+    } else if (item.resultType === "text") {
+      setResult({ type: "text", content: item.fullResult });
+    } else if (item.resultType === "palette") {
+      try {
+        const hexes: string[] = JSON.parse(item.fullResult);
+        setResult({
+          type: "palette",
+          content: hexes.map((hex) => {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return { hex, rgb: [r, g, b], count: 1 };
+          }),
+        });
+      } catch {
+        /* ignore */
+      }
+    }
+    if (item.prompt) setPrompt(item.prompt);
+    toast.success(`Restored: ${item.toolLabel}`);
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b">
@@ -193,7 +252,10 @@ const Workspace = () => {
           <button onClick={() => navigate("/")} className="text-sm font-semibold tracking-tight hover:opacity-70">
             AI Image Toolkit
           </button>
-          <ClerkAuth />
+          <div className="flex items-center gap-2">
+            <HistoryPanel refreshKey={historyKey} onRestore={handleRestore} />
+            <ClerkAuth />
+          </div>
         </div>
       </header>
 
@@ -240,13 +302,17 @@ const Workspace = () => {
                         t.id === "generate"
                           ? "Describe the image you want to generate…"
                           : t.id === "style"
-                            ? 'Describe the style, e.g. "oil painting", "anime"…'
+                            ? 'Describe the style focus, e.g. "warm golden hour"…'
                             : "Describe what to fix or fill in…"
                       }
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
                       rows={3}
                     />
+                  )}
+
+                  {t.hasPromptParams && (
+                    <PromptParams value={promptParams} onChange={setPromptParams} />
                   )}
 
                   {t.id === "wasm" && (
@@ -274,13 +340,13 @@ const Workspace = () => {
                   {t.id === "bgRemove" && (
                     <p className="text-xs text-muted-foreground">
                       Runs RMBG-1.4 client-side via Transformers.js (WebGPU/WASM).
-                      First run downloads the model (~80 MB).
+                      First run downloads the model (~80 MB) — subsequent runs are instant.
                     </p>
                   )}
 
                   {t.id === "palette" && (
                     <p className="text-xs text-muted-foreground">
-                      Extracts the 8 most dominant colors from your image (instant, client-side).
+                      Extracts the 8 most dominant colors. Click swatches to copy hex, or export as CSS / JSON.
                     </p>
                   )}
 
@@ -337,10 +403,17 @@ const Workspace = () => {
                     {loading ? "Processing…" : `Run ${t.label}`}
                   </Button>
 
-                  {loading && <Progress value={undefined} className="h-1.5 animate-pulse" />}
+                  {loading && loadingProgress == null && (
+                    <Progress value={undefined} className="h-1.5 animate-pulse" />
+                  )}
                 </div>
 
-                <ResultDisplay result={result} loading={loading} />
+                <ResultDisplay
+                  result={result}
+                  loading={loading}
+                  loadingMessage={loadingMsg}
+                  loadingProgress={loadingProgress}
+                />
               </div>
             </TabsContent>
           ))}
