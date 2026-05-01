@@ -18,7 +18,7 @@ serve(async (req) => {
     const { action, image1, image2, prompt } = await req.json();
 
     // Text-based analysis actions use gemini-3-flash-preview
-    if (["analyze", "detect", "ocr", "compare"].includes(action)) {
+    if (["analyze", "detect", "ocr", "compare", "imageToPrompt"].includes(action)) {
       return await handleTextAction(action, image1, image2, LOVABLE_API_KEY);
     }
 
@@ -44,6 +44,8 @@ async function handleTextAction(action: string, image1: string, image2: string |
       "You are an OCR specialist. Extract ALL text visible in this image. Preserve the original formatting as much as possible. If no text is found, say so.",
     compare:
       "You are an image comparison expert. Analyze both images and describe their similarities and differences in detail: subject, colors, composition, style, and any notable distinctions.",
+    imageToPrompt:
+      "You are a prompt engineer. Generate a single, highly-detailed text-to-image prompt that would recreate this image. Include subject, style, lighting, composition, color palette, mood, camera/lens details if applicable, and quality modifiers. Output ONLY the prompt itself, no preamble or explanation.",
   };
 
   const userContent: any[] = [{ type: "text", text: systemPrompts[action] }];
