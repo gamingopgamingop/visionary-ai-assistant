@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,23 +13,36 @@ import ImageUploader from "@/components/ImageUploader";
 import ResultDisplay from "@/components/ResultDisplay";
 import ClerkAuth from "@/components/ClerkAuth";
 import { applyWasmEffect, type WasmEffect } from "@/lib/wasm-image";
+import { extractPalette, type PaletteColor } from "@/lib/color-palette";
+import { editImage, type ImageFormat } from "@/lib/basic-editor";
 import {
   Eye, ScanSearch, FileText, GitCompare, Sparkles, Eraser, Palette, Wand2, Cpu, Zap,
+  Scissors, Droplet, MessageSquareQuote, Crop,
 } from "lucide-react";
 
-type TabId = "analyze" | "detect" | "ocr" | "compare" | "enhance" | "inpaint" | "style" | "generate" | "wasm" | "onnx";
+type TabId =
+  | "analyze" | "detect" | "ocr" | "compare" | "enhance" | "inpaint" | "style" | "generate"
+  | "wasm" | "onnx" | "bgRemove" | "palette" | "imageToPrompt" | "editor";
 
-const tabs: { id: TabId; label: string; icon: React.ElementType; needsImage: boolean; needsSecondImage?: boolean; needsPrompt?: boolean }[] = [
-  { id: "analyze", label: "Analyze", icon: Eye, needsImage: true },
-  { id: "detect", label: "Detect", icon: ScanSearch, needsImage: true },
-  { id: "ocr", label: "OCR", icon: FileText, needsImage: true },
-  { id: "compare", label: "Compare", icon: GitCompare, needsImage: true, needsSecondImage: true },
-  { id: "enhance", label: "Enhance", icon: Sparkles, needsImage: true },
-  { id: "inpaint", label: "Inpaint", icon: Eraser, needsImage: true, needsPrompt: true },
-  { id: "style", label: "Style", icon: Palette, needsImage: true, needsPrompt: true },
-  { id: "generate", label: "Generate", icon: Wand2, needsImage: false, needsPrompt: true },
-  { id: "wasm", label: "WASM FX", icon: Zap, needsImage: true },
-  { id: "onnx", label: "ONNX AI", icon: Cpu, needsImage: true },
+const tabs: {
+  id: TabId; label: string; icon: React.ElementType;
+  needsImage: boolean; needsSecondImage?: boolean; needsPrompt?: boolean;
+  group: "ai" | "wasm" | "edit";
+}[] = [
+  { id: "analyze", label: "Analyze", icon: Eye, needsImage: true, group: "ai" },
+  { id: "detect", label: "Detect", icon: ScanSearch, needsImage: true, group: "ai" },
+  { id: "ocr", label: "OCR", icon: FileText, needsImage: true, group: "ai" },
+  { id: "compare", label: "Compare", icon: GitCompare, needsImage: true, needsSecondImage: true, group: "ai" },
+  { id: "enhance", label: "Enhance", icon: Sparkles, needsImage: true, group: "ai" },
+  { id: "inpaint", label: "Inpaint", icon: Eraser, needsImage: true, needsPrompt: true, group: "ai" },
+  { id: "style", label: "Style", icon: Palette, needsImage: true, needsPrompt: true, group: "ai" },
+  { id: "generate", label: "Generate", icon: Wand2, needsImage: false, needsPrompt: true, group: "ai" },
+  { id: "imageToPrompt", label: "Image→Prompt", icon: MessageSquareQuote, needsImage: true, group: "ai" },
+  { id: "bgRemove", label: "BG Remove", icon: Scissors, needsImage: true, group: "wasm" },
+  { id: "palette", label: "Palette", icon: Droplet, needsImage: true, group: "wasm" },
+  { id: "wasm", label: "WASM FX", icon: Zap, needsImage: true, group: "wasm" },
+  { id: "onnx", label: "ONNX AI", icon: Cpu, needsImage: true, group: "wasm" },
+  { id: "editor", label: "Editor", icon: Crop, needsImage: true, group: "edit" },
 ];
 
 const wasmEffects: { value: WasmEffect; label: string }[] = [
@@ -44,6 +59,12 @@ const wasmEffects: { value: WasmEffect; label: string }[] = [
   { value: "emboss", label: "Emboss" },
 ];
 
+type ResultState =
+  | { type: "text"; content: string }
+  | { type: "image"; content: string }
+  | { type: "palette"; content: PaletteColor[] }
+  | null;
+
 const Workspace = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabId>("analyze");
@@ -51,8 +72,15 @@ const Workspace = () => {
   const [image2, setImage2] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ type: "text" | "image"; content: string } | null>(null);
+  const [result, setResult] = useState<ResultState>(null);
   const [wasmEffect, setWasmEffect] = useState<WasmEffect>("grayscale");
+
+  // Editor controls
+  const [editWidth, setEditWidth] = useState<string>("");
+  const [editHeight, setEditHeight] = useState<string>("");
+  const [editRotate, setEditRotate] = useState<"0" | "90" | "180" | "270">("0");
+  const [editFormat, setEditFormat] = useState<ImageFormat>("image/png");
+  const [editQuality, setEditQuality] = useState<string>("0.9");
 
   const currentTab = tabs.find((t) => t.id === activeTab)!;
 
@@ -64,31 +92,25 @@ const Workspace = () => {
       reader.readAsDataURL(file);
     });
 
-  const handleImageDrop = useCallback(
-    async (file: File, slot: 1 | 2) => {
-      const base64 = await fileToBase64(file);
-      if (slot === 1) setImage1(base64);
-      else setImage2(base64);
-    },
-    [],
-  );
+  const handleImageDrop = useCallback(async (file: File, slot: 1 | 2) => {
+    const base64 = await fileToBase64(file);
+    if (slot === 1) setImage1(base64);
+    else setImage2(base64);
+  }, []);
 
   const handleProcess = async () => {
     setLoading(true);
     setResult(null);
     try {
-      // Client-side WASM processing
       if (activeTab === "wasm") {
         if (!image1) throw new Error("Upload an image first");
         const start = performance.now();
-        const resultBase64 = await applyWasmEffect(image1, wasmEffect);
-        const elapsed = Math.round(performance.now() - start);
-        toast.success(`WASM processed in ${elapsed}ms`);
-        setResult({ type: "image", content: resultBase64 });
+        const out = await applyWasmEffect(image1, wasmEffect);
+        toast.success(`WASM processed in ${Math.round(performance.now() - start)}ms`);
+        setResult({ type: "image", content: out });
         return;
       }
 
-      // Client-side ONNX inference
       if (activeTab === "onnx") {
         if (!image1) throw new Error("Upload an image first");
         const { classifyImage } = await import("@/lib/onnx-inference");
@@ -106,6 +128,38 @@ const Workspace = () => {
         return;
       }
 
+      if (activeTab === "bgRemove") {
+        if (!image1) throw new Error("Upload an image first");
+        toast.info("Loading background removal model (first run may take a moment)…");
+        const start = performance.now();
+        const { removeBackground } = await import("@/lib/bg-remove");
+        const out = await removeBackground(image1);
+        toast.success(`Background removed in ${Math.round(performance.now() - start)}ms`);
+        setResult({ type: "image", content: out });
+        return;
+      }
+
+      if (activeTab === "palette") {
+        if (!image1) throw new Error("Upload an image first");
+        const colors = await extractPalette(image1, 8);
+        setResult({ type: "palette", content: colors });
+        return;
+      }
+
+      if (activeTab === "editor") {
+        if (!image1) throw new Error("Upload an image first");
+        const out = await editImage(image1, {
+          width: editWidth ? parseInt(editWidth) : undefined,
+          height: editHeight ? parseInt(editHeight) : undefined,
+          rotate: parseInt(editRotate) as 0 | 90 | 180 | 270,
+          format: editFormat,
+          quality: parseFloat(editQuality),
+        });
+        toast.success("Image processed");
+        setResult({ type: "image", content: out });
+        return;
+      }
+
       // Server-side AI processing
       const body: Record<string, string> = { action: activeTab };
       if (image1) body.image1 = image1;
@@ -115,11 +169,8 @@ const Workspace = () => {
       const { data, error } = await supabase.functions.invoke("image-ai", { body });
       if (error) throw error;
 
-      if (data.resultImage) {
-        setResult({ type: "image", content: data.resultImage });
-      } else {
-        setResult({ type: "text", content: data.resultText });
-      }
+      if (data.resultImage) setResult({ type: "image", content: data.resultImage });
+      else setResult({ type: "text", content: data.resultText });
     } catch (e: any) {
       console.error(e);
       toast.error(e.message || "Something went wrong");
@@ -166,7 +217,6 @@ const Workspace = () => {
           {tabs.map((t) => (
             <TabsContent key={t.id} value={t.id}>
               <div className="grid gap-6 lg:grid-cols-2">
-                {/* Input side */}
                 <div className="space-y-4">
                   {t.needsImage && (
                     <ImageUploader
@@ -199,7 +249,6 @@ const Workspace = () => {
                     />
                   )}
 
-                  {/* WASM effect selector */}
                   {t.id === "wasm" && (
                     <Select value={wasmEffect} onValueChange={(v) => setWasmEffect(v as WasmEffect)}>
                       <SelectTrigger>
@@ -215,12 +264,64 @@ const Workspace = () => {
                     </Select>
                   )}
 
-                  {/* ONNX info */}
                   {t.id === "onnx" && (
                     <p className="text-xs text-muted-foreground">
-                      Runs MobileNet v2 classification via ONNX Runtime Web (WASM backend).
+                      Runs MobileNet v2 classification via ONNX Runtime Web (WASM).
                       Place custom <code>.onnx</code> models in <code>public/models/</code>.
                     </p>
+                  )}
+
+                  {t.id === "bgRemove" && (
+                    <p className="text-xs text-muted-foreground">
+                      Runs RMBG-1.4 client-side via Transformers.js (WebGPU/WASM).
+                      First run downloads the model (~80 MB).
+                    </p>
+                  )}
+
+                  {t.id === "palette" && (
+                    <p className="text-xs text-muted-foreground">
+                      Extracts the 8 most dominant colors from your image (instant, client-side).
+                    </p>
+                  )}
+
+                  {t.id === "editor" && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Width (px)</Label>
+                        <Input value={editWidth} onChange={(e) => setEditWidth(e.target.value)} placeholder="auto" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Height (px)</Label>
+                        <Input value={editHeight} onChange={(e) => setEditHeight(e.target.value)} placeholder="auto" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Rotate</Label>
+                        <Select value={editRotate} onValueChange={(v) => setEditRotate(v as any)}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">0°</SelectItem>
+                            <SelectItem value="90">90°</SelectItem>
+                            <SelectItem value="180">180°</SelectItem>
+                            <SelectItem value="270">270°</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Format</Label>
+                        <Select value={editFormat} onValueChange={(v) => setEditFormat(v as ImageFormat)}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="image/png">PNG</SelectItem>
+                            <SelectItem value="image/jpeg">JPEG</SelectItem>
+                            <SelectItem value="image/webp">WebP</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="col-span-2">
+                        <Label className="text-xs">Quality (0–1, JPEG/WebP)</Label>
+                        <Input value={editQuality} onChange={(e) => setEditQuality(e.target.value)} />
+                      </div>
+                    </div>
                   )}
 
                   <Button
@@ -239,7 +340,6 @@ const Workspace = () => {
                   {loading && <Progress value={undefined} className="h-1.5 animate-pulse" />}
                 </div>
 
-                {/* Result side */}
                 <ResultDisplay result={result} loading={loading} />
               </div>
             </TabsContent>
