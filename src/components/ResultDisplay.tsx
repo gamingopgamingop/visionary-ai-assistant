@@ -1,23 +1,35 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Download, Copy } from "lucide-react";
+import { Copy } from "lucide-react";
 import { toast } from "sonner";
 import type { PaletteColor } from "@/lib/color-palette";
+import PaletteView from "@/components/PaletteView";
+import ImageResult from "@/components/ImageResult";
+import { Progress } from "@/components/ui/progress";
+
+export type ResultState =
+  | { type: "text"; content: string }
+  | { type: "image"; content: string; original?: string | null; checkerBg?: boolean }
+  | { type: "palette"; content: PaletteColor[] }
+  | null;
 
 interface Props {
-  result:
-    | { type: "text"; content: string }
-    | { type: "image"; content: string }
-    | { type: "palette"; content: PaletteColor[] }
-    | null;
+  result: ResultState;
   loading: boolean;
+  loadingMessage?: string;
+  loadingProgress?: number; // 0-1
 }
 
-const ResultDisplay = ({ result, loading }: Props) => {
+const ResultDisplay = ({ result, loading, loadingMessage, loadingProgress }: Props) => {
   if (loading) {
     return (
-      <div className="flex items-center justify-center rounded-lg border bg-muted/30 min-h-[300px]">
-        <p className="text-sm text-muted-foreground animate-pulse">Processing…</p>
+      <div className="flex flex-col items-center justify-center gap-4 rounded-lg border bg-muted/30 min-h-[300px] p-6">
+        <p className="text-sm text-muted-foreground animate-pulse text-center">
+          {loadingMessage ?? "Processing…"}
+        </p>
+        {loadingProgress != null && (
+          <Progress value={Math.round(loadingProgress * 100)} className="w-full max-w-xs h-1.5" />
+        )}
       </div>
     );
   }
@@ -31,57 +43,17 @@ const ResultDisplay = ({ result, loading }: Props) => {
   }
 
   if (result.type === "image") {
-    const downloadImage = () => {
-      const a = document.createElement("a");
-      a.href = result.content;
-      a.download = "result.png";
-      a.click();
-    };
-
     return (
-      <div className="space-y-3">
-        <div className="rounded-lg border overflow-hidden bg-[conic-gradient(at_50%_50%,_#f3f4f6_25%,_#ffffff_25%_50%,_#f3f4f6_50%_75%,_#ffffff_75%)] [background-size:20px_20px]">
-          <img src={result.content} alt="Result" className="w-full object-contain max-h-[500px]" />
-        </div>
-        <Button variant="outline" size="sm" onClick={downloadImage}>
-          <Download className="h-4 w-4 mr-1.5" /> Download
-        </Button>
-      </div>
+      <ImageResult
+        imageUrl={result.content}
+        originalUrl={result.original ?? null}
+        showCheckerBg={result.checkerBg}
+      />
     );
   }
 
   if (result.type === "palette") {
-    const copyHex = (hex: string) => {
-      navigator.clipboard.writeText(hex);
-      toast.success(`Copied ${hex}`);
-    };
-    return (
-      <div className="space-y-3">
-        <div className="rounded-lg border overflow-hidden flex h-32">
-          {result.content.map((c) => (
-            <div
-              key={c.hex}
-              className="flex-1 cursor-pointer transition-transform hover:scale-105"
-              style={{ background: c.hex }}
-              onClick={() => copyHex(c.hex)}
-              title={c.hex}
-            />
-          ))}
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {result.content.map((c) => (
-            <button
-              key={c.hex}
-              onClick={() => copyHex(c.hex)}
-              className="flex items-center gap-2 rounded-md border p-2 text-left hover:bg-muted/50"
-            >
-              <span className="h-6 w-6 rounded border" style={{ background: c.hex }} />
-              <span className="text-xs font-mono">{c.hex}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    );
+    return <PaletteView colors={result.content} />;
   }
 
   const copyText = () => {
