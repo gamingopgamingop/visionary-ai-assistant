@@ -123,25 +123,3 @@ export function exportHistory(): string {
     2,
   );
 }
-
-/** Lightweight CSV export — metadata only (no base64 blobs). */
-export function exportHistoryCSV(): string {
-  const rows = read();
-  const escape = (v: string) => `"${v.replace(/"/g, '""').replace(/\r?\n/g, " ")}"`;
-  const header = ["id", "createdAt", "tool", "toolLabel", "resultType", "prompt", "preview"];
-  const lines = [header.join(",")];
-  for (const r of rows) {
-    const preview = r.resultType === "image" ? "[image]" : r.resultPreview;
-    lines.push([
-      escape(r.id),
-      escape(new Date(r.createdAt).toISOString()),
-      escape(r.tool),
-      escape(r.toolLabel),
-      escape(r.resultType),
-      escape(r.prompt ?? ""),
-      escape(preview),
-    ].join(","));
-  }
-  return lines.join("\n");
-}
-

@@ -3,23 +3,16 @@ import { ClerkProvider } from "@clerk/clerk-react";
 import App from "./App.tsx";
 import "./index.css";
 import { CLERK_PUBLISHABLE_KEY } from "./config/clerk";
-import { ThemeProvider } from "./components/ThemeProvider";
 
 const Root = () => {
-  const tree = (
-    <ThemeProvider>
-      <App />
-    </ThemeProvider>
-  );
   if (CLERK_PUBLISHABLE_KEY) {
     return (
       <ClerkProvider afterSignOutUrl="/" publishableKey={CLERK_PUBLISHABLE_KEY}>
-        {tree}
+        <App />
       </ClerkProvider>
     );
   }
-  return tree;
+  return <App />;
 };
 
 createRoot(document.getElementById("root")!).render(<Root />);
-
