@@ -5,8 +5,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { History, Trash2, X, Download, Search } from "lucide-react";
-import { listHistory, deleteHistory, clearHistory, exportHistory, type HistoryItem } from "@/lib/history";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { History, Trash2, X, Download, Search, ChevronDown } from "lucide-react";
+import {
+  listHistory, deleteHistory, clearHistory, exportHistory, exportHistoryCSV,
+  type HistoryItem,
+} from "@/lib/history";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 interface Props {
@@ -51,15 +57,18 @@ const HistoryPanel = ({ refreshKey, onRestore }: Props) => {
     refresh();
   };
 
-  const handleExport = () => {
-    const blob = new Blob([exportHistory()], { type: "application/json" });
+  const downloadBlob = (content: string, mime: string, ext: string) => {
+    const blob = new Blob([content], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `ait-history-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `ait-history-${new Date().toISOString().slice(0, 10)}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  const handleExportJson = () => downloadBlob(exportHistory(), "application/json", "json");
+  const handleExportCsv = () => downloadBlob(exportHistoryCSV(), "text/csv", "csv");
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -76,9 +85,18 @@ const HistoryPanel = ({ refreshKey, onRestore }: Props) => {
             <div className="flex items-center gap-1">
               {items.length > 0 && (
                 <>
-                  <Button variant="ghost" size="sm" onClick={handleExport} className="text-muted-foreground">
-                    <Download className="h-3.5 w-3.5 mr-1" /> Export
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-muted-foreground">
+                        <Download className="h-3.5 w-3.5 mr-1" /> Export
+                        <ChevronDown className="h-3 w-3 ml-0.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={handleExportJson}>JSON (full data)</DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleExportCsv}>CSV (metadata)</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Button variant="ghost" size="sm" onClick={handleClear} className="text-muted-foreground">
                     <Trash2 className="h-3.5 w-3.5 mr-1" /> Clear
                   </Button>
@@ -86,6 +104,7 @@ const HistoryPanel = ({ refreshKey, onRestore }: Props) => {
               )}
             </div>
           </div>
+
           {items.length > 0 && (
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -132,7 +151,14 @@ const HistoryPanel = ({ refreshKey, onRestore }: Props) => {
                 >
                   <div className="h-14 w-14 shrink-0 rounded border bg-muted/40 overflow-hidden flex items-center justify-center">
                     {it.thumbnail ? (
-                      <img src={it.thumbnail} alt="" className="h-full w-full object-cover" />
+                      <img
+                        src={it.thumbnail}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover opacity-0 transition-opacity duration-200"
+                        onLoad={(e) => e.currentTarget.classList.remove("opacity-0")}
+                      />
                     ) : (
                       <span className="text-[10px] text-muted-foreground uppercase">{it.resultType}</span>
                     )}
