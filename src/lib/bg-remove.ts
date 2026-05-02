@@ -1,15 +1,15 @@
 /**
- * Client-side background removal using HuggingFace Transformers (RMBG-1.4).
+ * Client-side background removal using HuggingFace Transformers.
  * Runs in-browser via WebGPU when available, falls back to WASM.
+ * Supports configurable model + max-dim + WebGPU toggle for batch use.
  */
 import { pipeline, env } from "@huggingface/transformers";
 
 env.allowLocalModels = false;
 
-const MAX_DIM = 1024;
+export type BgModelId = "briaai/RMBG-1.4" | "Xenova/modnet" | string;
 
-let segmenter: any = null;
-let loadPromise: Promise<any> | null = null;
+const DEFAULT_MAX_DIM = 1024;
 
 export type ProgressCb = (info: {
   stage: "loading-model" | "segmenting" | "compositing";
@@ -17,12 +17,27 @@ export type ProgressCb = (info: {
   message?: string;
 }) => void;
 
-async function getSegmenter(onProgress?: ProgressCb) {
-  if (segmenter) return segmenter;
-  if (loadPromise) return loadPromise;
+export interface BgRemoveOptions {
+  model?: BgModelId;
+  maxDim?: number;
+  useWebGPU?: boolean;
+  onProgress?: ProgressCb;
+}
 
-  loadPromise = (async () => {
-    const progressCallback = (data: any) => {
+// Cache one segmenter per (model, device) pair.
+const cache = new Map<string, Promise<any>>();
+
+async function getSegmenter(
+  model: BgModelId,
+  useWebGPU: boolean,
+  onProgress?: ProgressCb,
+) {
+  const key = `${model}|${useWebGPU ? "webgpu" : "wasm"}`;
+  const cached = cache.get(key);
+  if (cached) return cached;
+
+  const promise = (async () => {
+    const progress_callback = (data: any) => {
       if (data?.status === "progress" && data?.progress != null) {
         onProgress?.({
           stage: "loading-model",
@@ -31,27 +46,27 @@ async function getSegmenter(onProgress?: ProgressCb) {
         });
       }
     };
+    let seg: any;
     try {
-      segmenter = await pipeline("background-removal", "briaai/RMBG-1.4", {
-        device: "webgpu",
-        progress_callback: progressCallback,
+      seg = await pipeline("background-removal", model, {
+        ...(useWebGPU ? { device: "webgpu" as const } : {}),
+        progress_callback,
       });
     } catch {
-      segmenter = await pipeline("background-removal", "briaai/RMBG-1.4", {
-        progress_callback: progressCallback,
-      });
+      seg = await pipeline("background-removal", model, { progress_callback });
     }
     onProgress?.({ stage: "loading-model", progress: 1, message: "Model ready" });
-    return segmenter;
+    return seg;
   })();
 
-  return loadPromise;
+  cache.set(key, promise);
+  return promise;
 }
 
-function resizeIfNeeded(canvas: HTMLCanvasElement) {
+function resizeIfNeeded(canvas: HTMLCanvasElement, maxDim: number) {
   const { width, height } = canvas;
-  if (width <= MAX_DIM && height <= MAX_DIM) return canvas;
-  const scale = Math.min(MAX_DIM / width, MAX_DIM / height);
+  if (width <= maxDim && height <= maxDim) return canvas;
+  const scale = Math.min(maxDim / width, maxDim / height);
   const out = document.createElement("canvas");
   out.width = Math.round(width * scale);
   out.height = Math.round(height * scale);
@@ -59,11 +74,14 @@ function resizeIfNeeded(canvas: HTMLCanvasElement) {
   return out;
 }
 
-export async function removeBackground(
+async function runRemoval(
   base64: string,
-  onProgress?: ProgressCb
+  model: BgModelId,
+  maxDim: number,
+  useWebGPU: boolean,
+  onProgress?: ProgressCb,
 ): Promise<string> {
-  const seg = await getSegmenter(onProgress);
+  const seg = await getSegmenter(model, useWebGPU, onProgress);
 
   const img = await new Promise<HTMLImageElement>((resolve, reject) => {
     const i = new Image();
@@ -77,7 +95,7 @@ export async function removeBackground(
   src.width = img.naturalWidth;
   src.height = img.naturalHeight;
   src.getContext("2d")!.drawImage(img, 0, 0);
-  const canvas = resizeIfNeeded(src);
+  const canvas = resizeIfNeeded(src, maxDim);
 
   onProgress?.({ stage: "segmenting", progress: 0.3, message: "Detecting subject…" });
   const result = await seg(canvas.toDataURL("image/png"));
@@ -100,4 +118,26 @@ export async function removeBackground(
 
   onProgress?.({ stage: "compositing", progress: 1, message: "Done" });
   return canvas.toDataURL("image/png");
+}
+
+/** Single-image background removal (back-compat with previous default model). */
+export async function removeBackground(
+  base64: string,
+  onProgress?: ProgressCb,
+): Promise<string> {
+  return runRemoval(base64, "briaai/RMBG-1.4", DEFAULT_MAX_DIM, true, onProgress);
+}
+
+/** Batch-friendly entry with explicit model + options. */
+export async function removeBackgroundBatch(
+  base64: string,
+  opts: BgRemoveOptions = {},
+): Promise<string> {
+  return runRemoval(
+    base64,
+    opts.model ?? "briaai/RMBG-1.4",
+    opts.maxDim ?? DEFAULT_MAX_DIM,
+    opts.useWebGPU ?? true,
+    opts.onProgress,
+  );
 }
