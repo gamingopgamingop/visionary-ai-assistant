@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import ClerkAuth from "@/components/ClerkAuth";
+import ThemeMenu from "@/components/ThemeMenu";
 import {
   Eye, ScanSearch, FileText, GitCompare, Sparkles, Eraser, Palette, Wand2, Zap, Cpu,
   Scissors, Droplet, MessageSquareQuote, Crop, Boxes,
@@ -64,6 +65,7 @@ const Index = () => {
         <div className="container flex h-16 items-center justify-between">
           <h2 className="text-lg font-semibold tracking-tight">AI Image Toolkit</h2>
           <div className="flex items-center gap-3">
+            <ThemeMenu />
             <ClerkAuth />
             <Button onClick={() => navigate("/workspace")} size="sm">
               Open Workspace
