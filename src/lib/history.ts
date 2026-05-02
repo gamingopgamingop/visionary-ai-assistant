@@ -110,3 +110,16 @@ export function deleteHistory(id: string) {
 export function clearHistory() {
   localStorage.removeItem(KEY);
 }
+
+/** Serialize the full history (including thumbnails + full results) for download. */
+export function exportHistory(): string {
+  return JSON.stringify(
+    {
+      exportedAt: new Date().toISOString(),
+      version: 1,
+      items: read(),
+    },
+    null,
+    2,
+  );
+}
