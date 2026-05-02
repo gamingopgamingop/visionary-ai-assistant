@@ -14,6 +14,8 @@ import ResultDisplay, { type ResultState } from "@/components/ResultDisplay";
 import ClerkAuth from "@/components/ClerkAuth";
 import HistoryPanel from "@/components/HistoryPanel";
 import PromptParams, { DEFAULT_PROMPT_PARAMS, type PromptParamsValue } from "@/components/PromptParams";
+import PromptPresetPicker from "@/components/PromptPresetPicker";
+import BatchBgRemove from "@/components/BatchBgRemove";
 import { applyWasmEffect, type WasmEffect } from "@/lib/wasm-image";
 import { extractPalette } from "@/lib/color-palette";
 import { editImage, type ImageFormat } from "@/lib/basic-editor";
@@ -297,18 +299,26 @@ const Workspace = () => {
                     />
                   )}
                   {t.needsPrompt && (
-                    <Textarea
-                      placeholder={
-                        t.id === "generate"
-                          ? "Describe the image you want to generate…"
-                          : t.id === "style"
-                            ? 'Describe the style focus, e.g. "warm golden hour"…'
-                            : "Describe what to fix or fill in…"
-                      }
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      rows={3}
-                    />
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-muted-foreground">Prompt</Label>
+                        {(t.id === "generate" || t.id === "style" || t.id === "inpaint" || t.id === "enhance") && (
+                          <PromptPresetPicker tool={t.id} onPick={(p) => setPrompt(p)} />
+                        )}
+                      </div>
+                      <Textarea
+                        placeholder={
+                          t.id === "generate"
+                            ? "Describe the image you want to generate…"
+                            : t.id === "style"
+                              ? 'Describe the style focus, e.g. "warm golden hour"…'
+                              : "Describe what to fix or fill in…"
+                        }
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        rows={3}
+                      />
+                    </div>
                   )}
 
                   {t.hasPromptParams && (
@@ -338,10 +348,15 @@ const Workspace = () => {
                   )}
 
                   {t.id === "bgRemove" && (
-                    <p className="text-xs text-muted-foreground">
-                      Runs RMBG-1.4 client-side via Transformers.js (WebGPU/WASM).
-                      First run downloads the model (~80 MB) — subsequent runs are instant.
-                    </p>
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        Single image uses RMBG-1.4 with WebGPU. Use the batch panel below for multi-image jobs with custom model + size.
+                      </p>
+                      <div className="rounded-md border p-3 bg-muted/30">
+                        <p className="text-xs font-medium mb-2">Batch background removal</p>
+                        <BatchBgRemove />
+                      </div>
+                    </div>
                   )}
 
                   {t.id === "palette" && (
