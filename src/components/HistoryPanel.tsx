@@ -151,7 +151,14 @@ const HistoryPanel = ({ refreshKey, onRestore }: Props) => {
                 >
                   <div className="h-14 w-14 shrink-0 rounded border bg-muted/40 overflow-hidden flex items-center justify-center">
                     {it.thumbnail ? (
-                      <img src={it.thumbnail} alt="" className="h-full w-full object-cover" />
+                      <img
+                        src={it.thumbnail}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover opacity-0 transition-opacity duration-200"
+                        onLoad={(e) => e.currentTarget.classList.remove("opacity-0")}
+                      />
                     ) : (
                       <span className="text-[10px] text-muted-foreground uppercase">{it.resultType}</span>
                     )}
