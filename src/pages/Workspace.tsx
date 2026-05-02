@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +16,8 @@ import HistoryPanel from "@/components/HistoryPanel";
 import PromptParams, { DEFAULT_PROMPT_PARAMS, type PromptParamsValue } from "@/components/PromptParams";
 import PromptPresetPicker from "@/components/PromptPresetPicker";
 import BatchBgRemove from "@/components/BatchBgRemove";
+import ThemeMenu from "@/components/ThemeMenu";
+import { loadSettings, saveSettings } from "@/lib/workspace-settings";
 import { applyWasmEffect, type WasmEffect } from "@/lib/wasm-image";
 import { extractPalette } from "@/lib/color-palette";
 import { editImage, type ImageFormat } from "@/lib/basic-editor";
@@ -66,26 +68,40 @@ const wasmEffects: { value: WasmEffect; label: string }[] = [
 
 const Workspace = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabId>("analyze");
+  const persisted = loadSettings();
+  const [activeTab, setActiveTab] = useState<TabId>(persisted.activeTab as TabId);
   const [image1, setImage1] = useState<string | null>(null);
   const [image2, setImage2] = useState<string | null>(null);
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState(persisted.prompt);
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState<string>("");
   const [loadingProgress, setLoadingProgress] = useState<number | undefined>(undefined);
   const [result, setResult] = useState<ResultState>(null);
-  const [wasmEffect, setWasmEffect] = useState<WasmEffect>("grayscale");
-  const [promptParams, setPromptParams] = useState<PromptParamsValue>(DEFAULT_PROMPT_PARAMS);
+  const [wasmEffect, setWasmEffect] = useState<WasmEffect>(persisted.wasmEffect as WasmEffect);
+  const [promptParams, setPromptParams] = useState<PromptParamsValue>(persisted.promptParams);
   const [historyKey, setHistoryKey] = useState(0);
 
   // Editor controls
-  const [editWidth, setEditWidth] = useState<string>("");
-  const [editHeight, setEditHeight] = useState<string>("");
-  const [editRotate, setEditRotate] = useState<"0" | "90" | "180" | "270">("0");
-  const [editFormat, setEditFormat] = useState<ImageFormat>("image/png");
-  const [editQuality, setEditQuality] = useState<string>("0.9");
+  const [editWidth, setEditWidth] = useState<string>(persisted.editor.width);
+  const [editHeight, setEditHeight] = useState<string>(persisted.editor.height);
+  const [editRotate, setEditRotate] = useState<"0" | "90" | "180" | "270">(persisted.editor.rotate);
+  const [editFormat, setEditFormat] = useState<ImageFormat>(persisted.editor.format as ImageFormat);
+  const [editQuality, setEditQuality] = useState<string>(persisted.editor.quality);
+
+  // Persist whenever any tracked setting changes
+  useEffect(() => {
+    saveSettings({
+      activeTab,
+      prompt,
+      promptParams,
+      wasmEffect,
+      editor: { width: editWidth, height: editHeight, rotate: editRotate, format: editFormat, quality: editQuality },
+      batchBg: loadSettings().batchBg, // managed by BatchBgRemove
+    });
+  }, [activeTab, prompt, promptParams, wasmEffect, editWidth, editHeight, editRotate, editFormat, editQuality]);
 
   const currentTab = tabs.find((t) => t.id === activeTab)!;
+
 
   const fileToBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
