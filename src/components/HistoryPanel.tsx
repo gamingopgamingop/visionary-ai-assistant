@@ -57,15 +57,18 @@ const HistoryPanel = ({ refreshKey, onRestore }: Props) => {
     refresh();
   };
 
-  const handleExport = () => {
-    const blob = new Blob([exportHistory()], { type: "application/json" });
+  const downloadBlob = (content: string, mime: string, ext: string) => {
+    const blob = new Blob([content], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `ait-history-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `ait-history-${new Date().toISOString().slice(0, 10)}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  const handleExportJson = () => downloadBlob(exportHistory(), "application/json", "json");
+  const handleExportCsv = () => downloadBlob(exportHistoryCSV(), "text/csv", "csv");
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -82,9 +85,18 @@ const HistoryPanel = ({ refreshKey, onRestore }: Props) => {
             <div className="flex items-center gap-1">
               {items.length > 0 && (
                 <>
-                  <Button variant="ghost" size="sm" onClick={handleExport} className="text-muted-foreground">
-                    <Download className="h-3.5 w-3.5 mr-1" /> Export
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-muted-foreground">
+                        <Download className="h-3.5 w-3.5 mr-1" /> Export
+                        <ChevronDown className="h-3 w-3 ml-0.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={handleExportJson}>JSON (full data)</DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleExportCsv}>CSV (metadata)</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Button variant="ghost" size="sm" onClick={handleClear} className="text-muted-foreground">
                     <Trash2 className="h-3.5 w-3.5 mr-1" /> Clear
                   </Button>
@@ -92,6 +104,7 @@ const HistoryPanel = ({ refreshKey, onRestore }: Props) => {
               )}
             </div>
           </div>
+
           {items.length > 0 && (
             <div className="flex gap-2">
               <div className="relative flex-1">
