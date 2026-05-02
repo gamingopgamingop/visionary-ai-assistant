@@ -272,6 +272,7 @@ const Workspace = () => {
           </button>
           <div className="flex items-center gap-2">
             <HistoryPanel refreshKey={historyKey} onRestore={handleRestore} />
+            <ThemeMenu />
             <ClerkAuth />
           </div>
         </div>
