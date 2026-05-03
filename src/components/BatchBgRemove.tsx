@@ -16,6 +16,8 @@ interface BatchItem {
   src: string;
   out?: string;
   status: "pending" | "running" | "done" | "error";
+  progress?: number; // 0-1 per file
+  stage?: string;
   error?: string;
 }
 
