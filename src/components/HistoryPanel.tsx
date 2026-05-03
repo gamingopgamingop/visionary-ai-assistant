@@ -52,15 +52,18 @@ const HistoryPanel = ({ refreshKey, onRestore }: Props) => {
     refresh();
   };
 
-  const handleExport = () => {
-    const blob = new Blob([exportHistory()], { type: "application/json" });
+  const downloadBlob = (content: string, mime: string, ext: string) => {
+    const blob = new Blob([content], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `ait-history-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `ait-history-${new Date().toISOString().slice(0, 10)}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  const handleExportJSON = () => downloadBlob(exportHistory(), "application/json", "json");
+  const handleExportCSV = () => downloadBlob(exportHistoryCSV(), "text/csv", "csv");
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
