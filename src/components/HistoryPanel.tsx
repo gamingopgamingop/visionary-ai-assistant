@@ -6,7 +6,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { History, Trash2, X, Download, Search } from "lucide-react";
-import { listHistory, deleteHistory, clearHistory, exportHistory, type HistoryItem } from "@/lib/history";
+import { listHistory, deleteHistory, clearHistory, exportHistory, exportHistoryCSV, type HistoryItem } from "@/lib/history";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 interface Props {
