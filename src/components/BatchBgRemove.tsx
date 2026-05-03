@@ -69,13 +69,18 @@ const BatchBgRemove = () => {
             model,
             maxDim: dim,
             useWebGPU,
-            onProgress: ({ message, progress: p }) => {
+            onProgress: ({ message, progress: p, stage }) => {
               setProgressMsg(`(${i + 1}/${items.length}) ${message ?? ""}`);
               setProgress(((done + (p ?? 0)) / items.length) * 100);
+              setItems((prev) =>
+                prev.map((it, idx) =>
+                  idx === i ? { ...it, progress: p, stage } : it,
+                ),
+              );
             },
           });
           setItems((prev) =>
-            prev.map((it, idx) => (idx === i ? { ...it, out, status: "done" } : it)),
+            prev.map((it, idx) => (idx === i ? { ...it, out, status: "done", progress: 1 } : it)),
           );
         } catch (e: any) {
           setItems((prev) =>
