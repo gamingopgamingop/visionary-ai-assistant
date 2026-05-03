@@ -67,7 +67,7 @@ const wasmEffects: { value: WasmEffect; label: string }[] = [
 
 const Workspace = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabId>("analyze");
+  const [activeTab, setActiveTab] = usePersistedState<TabId>("ait_ws_tab", "analyze");
   const [image1, setImage1] = useState<string | null>(null);
   const [image2, setImage2] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
@@ -75,16 +75,16 @@ const Workspace = () => {
   const [loadingMsg, setLoadingMsg] = useState<string>("");
   const [loadingProgress, setLoadingProgress] = useState<number | undefined>(undefined);
   const [result, setResult] = useState<ResultState>(null);
-  const [wasmEffect, setWasmEffect] = useState<WasmEffect>("grayscale");
-  const [promptParams, setPromptParams] = useState<PromptParamsValue>(DEFAULT_PROMPT_PARAMS);
+  const [wasmEffect, setWasmEffect] = usePersistedState<WasmEffect>("ait_ws_wasm", "grayscale");
+  const [promptParams, setPromptParams] = usePersistedState<PromptParamsValue>("ait_ws_params", DEFAULT_PROMPT_PARAMS);
   const [historyKey, setHistoryKey] = useState(0);
 
-  // Editor controls
-  const [editWidth, setEditWidth] = useState<string>("");
-  const [editHeight, setEditHeight] = useState<string>("");
-  const [editRotate, setEditRotate] = useState<"0" | "90" | "180" | "270">("0");
-  const [editFormat, setEditFormat] = useState<ImageFormat>("image/png");
-  const [editQuality, setEditQuality] = useState<string>("0.9");
+  // Editor controls (persisted)
+  const [editWidth, setEditWidth] = usePersistedState<string>("ait_ws_edit_w", "");
+  const [editHeight, setEditHeight] = usePersistedState<string>("ait_ws_edit_h", "");
+  const [editRotate, setEditRotate] = usePersistedState<"0" | "90" | "180" | "270">("ait_ws_edit_rot", "0");
+  const [editFormat, setEditFormat] = usePersistedState<ImageFormat>("ait_ws_edit_fmt", "image/png");
+  const [editQuality, setEditQuality] = usePersistedState<string>("ait_ws_edit_q", "0.9");
 
   const currentTab = tabs.find((t) => t.id === activeTab)!;
 
