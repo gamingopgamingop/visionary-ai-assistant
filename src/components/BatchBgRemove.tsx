@@ -10,12 +10,15 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Download, Upload, X } from "lucide-react";
 import { removeBackgroundBatch, type BgModelId } from "@/lib/bg-remove";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 
 interface BatchItem {
   name: string;
   src: string;
   out?: string;
   status: "pending" | "running" | "done" | "error";
+  progress?: number; // 0-1 per file
+  stage?: string;
   error?: string;
 }
 
@@ -26,9 +29,9 @@ const MODELS: { value: BgModelId; label: string; note: string }[] = [
 
 const BatchBgRemove = () => {
   const [items, setItems] = useState<BatchItem[]>([]);
-  const [model, setModel] = useState<BgModelId>("briaai/RMBG-1.4");
-  const [maxDim, setMaxDim] = useState("1024");
-  const [useWebGPU, setUseWebGPU] = useState(true);
+  const [model, setModel] = usePersistedState<BgModelId>("ait_batch_model", "briaai/RMBG-1.4");
+  const [maxDim, setMaxDim] = usePersistedState<string>("ait_batch_maxdim", "1024");
+  const [useWebGPU, setUseWebGPU] = usePersistedState<boolean>("ait_batch_webgpu", true);
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressMsg, setProgressMsg] = useState("");
@@ -67,13 +70,18 @@ const BatchBgRemove = () => {
             model,
             maxDim: dim,
             useWebGPU,
-            onProgress: ({ message, progress: p }) => {
+            onProgress: ({ message, progress: p, stage }) => {
               setProgressMsg(`(${i + 1}/${items.length}) ${message ?? ""}`);
               setProgress(((done + (p ?? 0)) / items.length) * 100);
+              setItems((prev) =>
+                prev.map((it, idx) =>
+                  idx === i ? { ...it, progress: p, stage } : it,
+                ),
+              );
             },
           });
           setItems((prev) =>
-            prev.map((it, idx) => (idx === i ? { ...it, out, status: "done" } : it)),
+            prev.map((it, idx) => (idx === i ? { ...it, out, status: "done", progress: 1 } : it)),
           );
         } catch (e: any) {
           setItems((prev) =>
@@ -153,23 +161,34 @@ const BatchBgRemove = () => {
       </label>
 
       {items.length > 0 && (
-        <ul className="space-y-1 max-h-48 overflow-auto rounded-md border p-2">
+        <ul className="space-y-1 max-h-56 overflow-auto rounded-md border p-2">
           {items.map((it, i) => (
-            <li key={i} className="flex items-center gap-2 text-xs">
-              <img src={it.out ?? it.src} alt="" className="h-8 w-8 rounded object-cover bg-muted" />
-              <span className="flex-1 truncate">{it.name}</span>
-              <span className={
-                it.status === "done" ? "text-emerald-600" :
-                it.status === "running" ? "text-primary" :
-                it.status === "error" ? "text-destructive" :
-                "text-muted-foreground"
-              }>
-                {it.status}
-              </span>
-              {!running && (
-                <button onClick={() => removeItem(i)} className="text-muted-foreground hover:text-foreground">
-                  <X className="h-3.5 w-3.5" />
-                </button>
+            <li key={i} className="flex flex-col gap-1 text-xs p-1 rounded hover:bg-muted/40">
+              <div className="flex items-center gap-2">
+                <img src={it.out ?? it.src} alt="" loading="lazy" decoding="async" className="h-8 w-8 rounded object-cover bg-muted" />
+                <span className="flex-1 truncate">{it.name}</span>
+                <span className={
+                  it.status === "done" ? "text-emerald-600" :
+                  it.status === "running" ? "text-primary" :
+                  it.status === "error" ? "text-destructive" :
+                  "text-muted-foreground"
+                }>
+                  {it.status}
+                </span>
+                {!running && (
+                  <button onClick={() => removeItem(i)} className="text-muted-foreground hover:text-foreground" aria-label="Remove">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              {it.status === "running" && (
+                <div className="pl-10 space-y-0.5">
+                  <Progress value={(it.progress ?? 0) * 100} className="h-1" />
+                  {it.stage && <p className="text-[10px] text-muted-foreground">{it.stage}</p>}
+                </div>
+              )}
+              {it.status === "error" && it.error && (
+                <p className="pl-10 text-[10px] text-destructive">{it.error}</p>
               )}
             </li>
           ))}

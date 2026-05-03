@@ -123,3 +123,25 @@ export function exportHistory(): string {
     2,
   );
 }
+
+/** Serialize history as CSV (omits binary data; keeps metadata + text/prompt). */
+export function exportHistoryCSV(): string {
+  const items = read();
+  const esc = (v: unknown) => {
+    const s = v == null ? "" : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const headers = ["id", "createdAt", "tool", "toolLabel", "resultType", "prompt", "preview"];
+  const rows = items.map((it) =>
+    [
+      it.id,
+      new Date(it.createdAt).toISOString(),
+      it.tool,
+      it.toolLabel,
+      it.resultType,
+      it.prompt ?? "",
+      it.resultType === "text" ? it.resultPreview : it.resultType === "palette" ? it.fullResult : "[image]",
+    ].map(esc).join(","),
+  );
+  return [headers.join(","), ...rows].join("\n");
+}
