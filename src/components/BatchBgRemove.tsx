@@ -29,9 +29,9 @@ const MODELS: { value: BgModelId; label: string; note: string }[] = [
 
 const BatchBgRemove = () => {
   const [items, setItems] = useState<BatchItem[]>([]);
-  const [model, setModel] = useState<BgModelId>("briaai/RMBG-1.4");
-  const [maxDim, setMaxDim] = useState("1024");
-  const [useWebGPU, setUseWebGPU] = useState(true);
+  const [model, setModel] = usePersistedState<BgModelId>("ait_batch_model", "briaai/RMBG-1.4");
+  const [maxDim, setMaxDim] = usePersistedState<string>("ait_batch_maxdim", "1024");
+  const [useWebGPU, setUseWebGPU] = usePersistedState<boolean>("ait_batch_webgpu", true);
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressMsg, setProgressMsg] = useState("");
