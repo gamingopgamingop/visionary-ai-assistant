@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Download, Upload, X } from "lucide-react";
 import { removeBackgroundBatch, type BgModelId } from "@/lib/bg-remove";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 
 interface BatchItem {
   name: string;
