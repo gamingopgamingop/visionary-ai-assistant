@@ -20,6 +20,7 @@ import { applyWasmEffect, type WasmEffect } from "@/lib/wasm-image";
 import { extractPalette } from "@/lib/color-palette";
 import { editImage, type ImageFormat } from "@/lib/basic-editor";
 import { addHistory, type HistoryItem } from "@/lib/history";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 import {
   Eye, ScanSearch, FileText, GitCompare, Sparkles, Eraser, Palette, Wand2, Cpu, Zap,
   Scissors, Droplet, MessageSquareQuote, Crop,
