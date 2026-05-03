@@ -80,9 +80,17 @@ const HistoryPanel = ({ refreshKey, onRestore }: Props) => {
             <div className="flex items-center gap-1">
               {items.length > 0 && (
                 <>
-                  <Button variant="ghost" size="sm" onClick={handleExport} className="text-muted-foreground">
-                    <Download className="h-3.5 w-3.5 mr-1" /> Export
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-muted-foreground">
+                        <Download className="h-3.5 w-3.5 mr-1" /> Export
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={handleExportJSON}>JSON</DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleExportCSV}>CSV</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Button variant="ghost" size="sm" onClick={handleClear} className="text-muted-foreground">
                     <Trash2 className="h-3.5 w-3.5 mr-1" /> Clear
                   </Button>
