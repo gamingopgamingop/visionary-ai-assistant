@@ -157,9 +157,16 @@ const Workspace = () => {
         if (!image1) throw new Error("Upload an image first");
         if (!onnxSel.path) throw new Error("Select or provide an ONNX model");
         setLoadingMsg(`Loading ${onnxSel.label}…`);
+        setLoadingProgress(0);
         const { classifyImage } = await import("@/lib/onnx-inference");
         const start = performance.now();
-        const predictions = await classifyImage(image1, onnxSel.path, onnxSel.inputName, onnxSel.inputShape);
+        const predictions = await classifyImage(
+          image1, onnxSel.path, onnxSel.inputName, onnxSel.inputShape,
+          (p) => {
+            setLoadingMsg(p.message);
+            if (p.total > 0) setLoadingProgress(p.loaded / p.total);
+          },
+        );
         const elapsed = Math.round(performance.now() - start);
         const text = predictions
           .map((p, i) => `${i + 1}. ${p.label} — ${(p.score * 100).toFixed(1)}%`)
@@ -169,6 +176,68 @@ const Workspace = () => {
           type: "text",
           content: `ONNX Runtime Web — ${onnxSel.label}\nProcessed in ${elapsed}ms\n\nTop predictions:\n${text}`,
         };
+      } else if (activeTab === "depth") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading depth model…");
+        setLoadingProgress(0);
+        const { estimateDepth } = await import("@/lib/extra-services");
+        const out = await estimateDepth(image1, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        });
+        res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "superres") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading upscaler…");
+        setLoadingProgress(0);
+        const { superResolve } = await import("@/lib/extra-services");
+        const out = await superResolve(image1, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        });
+        res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "caption") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading captioner…");
+        setLoadingProgress(0);
+        const { captionImage } = await import("@/lib/extra-services");
+        const text = await captionImage(image1, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        });
+        res = { type: "text", content: text };
+      } else if (activeTab === "nsfw") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading NSFW classifier…");
+        setLoadingProgress(0);
+        const { nsfwCheck } = await import("@/lib/extra-services");
+        const out = await nsfwCheck(image1, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        });
+        const text = out.map((o, i) => `${i + 1}. ${o.label} — ${(o.score * 100).toFixed(1)}%`).join("\n");
+        res = { type: "text", content: `NSFW classification:\n${text}` };
+      } else if (activeTab === "faces") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading detector…");
+        setLoadingProgress(0);
+        const { detectFaces } = await import("@/lib/extra-services");
+        const out = await detectFaces(image1, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        });
+        const text = out.length
+          ? out.map((o, i) => `${i + 1}. ${o.label} (${(o.score * 100).toFixed(0)}%) [${Math.round(o.box.xmin)},${Math.round(o.box.ymin)} → ${Math.round(o.box.xmax)},${Math.round(o.box.ymax)}]`).join("\n")
+          : "No detections above threshold.";
+        res = { type: "text", content: `Detected ${out.length} object(s):\n${text}` };
+      } else if (activeTab === "similarity") {
+        if (!image1 || !image2) throw new Error("Upload both images first");
+        setLoadingMsg("Loading embedder…");
+        setLoadingProgress(0);
+        const { embedImage, cosineSimilarity } = await import("@/lib/extra-services");
+        const a = await embedImage(image1, ({ progress, message }) => {
+          setLoadingMsg(`Image 1: ${message}`); setLoadingProgress(progress * 0.5);
+        });
+        const b = await embedImage(image2, ({ progress, message }) => {
+          setLoadingMsg(`Image 2: ${message}`); setLoadingProgress(0.5 + progress * 0.5);
+        });
+        const sim = cosineSimilarity(a, b);
+        res = { type: "text", content: `Cosine similarity: ${(sim * 100).toFixed(2)}%\n${sim > 0.85 ? "Very similar" : sim > 0.6 ? "Related" : "Different"}` };
       } else if (activeTab === "bgRemove") {
         if (!image1) throw new Error("Upload an image first");
         setLoadingMsg("Preparing background removal…");
