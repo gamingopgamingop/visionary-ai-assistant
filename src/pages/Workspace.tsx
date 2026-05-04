@@ -547,12 +547,14 @@ const Workspace = () => {
                   )}
                 </div>
 
-                <ResultDisplay
-                  result={result}
-                  loading={loading}
-                  loadingMessage={loadingMsg}
-                  loadingProgress={loadingProgress}
-                />
+                {t.id !== "settings" && (
+                  <ResultDisplay
+                    result={result}
+                    loading={loading}
+                    loadingMessage={loadingMsg}
+                    loadingProgress={loadingProgress}
+                  />
+                )}
               </div>
             </TabsContent>
           ))}
