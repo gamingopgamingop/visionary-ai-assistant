@@ -17,6 +17,7 @@ import PromptParams, { DEFAULT_PROMPT_PARAMS, type PromptParamsValue } from "@/c
 import PromptPresetPicker from "@/components/PromptPresetPicker";
 import BatchBgRemove from "@/components/BatchBgRemove";
 import OnnxModelPicker, { type OnnxSelection } from "@/components/OnnxModelPicker";
+import FaviconPicker from "@/components/FaviconPicker";
 import { ONNX_MODELS } from "@/lib/onnx-models";
 import { applyWasmEffect, type WasmEffect } from "@/lib/wasm-image";
 import { extractPalette } from "@/lib/color-palette";
@@ -25,12 +26,14 @@ import { addHistory, type HistoryItem } from "@/lib/history";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import {
   Eye, ScanSearch, FileText, GitCompare, Sparkles, Eraser, Palette, Wand2, Cpu, Zap,
-  Scissors, Droplet, MessageSquareQuote, Crop,
+  Scissors, Droplet, MessageSquareQuote, Crop, Mountain, Maximize2, Smile, ShieldAlert,
+  Type, Layers, Settings as SettingsIcon,
 } from "lucide-react";
 
 type TabId =
   | "analyze" | "detect" | "ocr" | "compare" | "enhance" | "inpaint" | "style" | "generate"
-  | "wasm" | "onnx" | "bgRemove" | "palette" | "imageToPrompt" | "editor";
+  | "wasm" | "onnx" | "bgRemove" | "palette" | "imageToPrompt" | "editor"
+  | "depth" | "superres" | "caption" | "nsfw" | "faces" | "similarity" | "settings";
 
 const tabs: {
   id: TabId; label: string; icon: React.ElementType;
@@ -46,11 +49,18 @@ const tabs: {
   { id: "style", label: "Style", icon: Palette, needsImage: true, needsPrompt: true, hasPromptParams: true },
   { id: "generate", label: "Generate", icon: Wand2, needsImage: false, needsPrompt: true, hasPromptParams: true },
   { id: "imageToPrompt", label: "Image→Prompt", icon: MessageSquareQuote, needsImage: true },
+  { id: "caption", label: "Caption", icon: Type, needsImage: true },
   { id: "bgRemove", label: "BG Remove", icon: Scissors, needsImage: true },
+  { id: "depth", label: "Depth", icon: Mountain, needsImage: true },
+  { id: "superres", label: "Super-Res", icon: Maximize2, needsImage: true },
+  { id: "faces", label: "Faces", icon: Smile, needsImage: true },
+  { id: "nsfw", label: "NSFW", icon: ShieldAlert, needsImage: true },
+  { id: "similarity", label: "Similarity", icon: Layers, needsImage: true, needsSecondImage: true },
   { id: "palette", label: "Palette", icon: Droplet, needsImage: true },
   { id: "wasm", label: "WASM FX", icon: Zap, needsImage: true },
   { id: "onnx", label: "ONNX AI", icon: Cpu, needsImage: true },
   { id: "editor", label: "Editor", icon: Crop, needsImage: true },
+  { id: "settings", label: "Settings", icon: SettingsIcon, needsImage: false },
 ];
 
 const wasmEffects: { value: WasmEffect; label: string }[] = [
@@ -147,9 +157,16 @@ const Workspace = () => {
         if (!image1) throw new Error("Upload an image first");
         if (!onnxSel.path) throw new Error("Select or provide an ONNX model");
         setLoadingMsg(`Loading ${onnxSel.label}…`);
+        setLoadingProgress(0);
         const { classifyImage } = await import("@/lib/onnx-inference");
         const start = performance.now();
-        const predictions = await classifyImage(image1, onnxSel.path, onnxSel.inputName, onnxSel.inputShape);
+        const predictions = await classifyImage(
+          image1, onnxSel.path, onnxSel.inputName, onnxSel.inputShape,
+          (p) => {
+            setLoadingMsg(p.message);
+            if (p.total > 0) setLoadingProgress(p.loaded / p.total);
+          },
+        );
         const elapsed = Math.round(performance.now() - start);
         const text = predictions
           .map((p, i) => `${i + 1}. ${p.label} — ${(p.score * 100).toFixed(1)}%`)
@@ -159,6 +176,68 @@ const Workspace = () => {
           type: "text",
           content: `ONNX Runtime Web — ${onnxSel.label}\nProcessed in ${elapsed}ms\n\nTop predictions:\n${text}`,
         };
+      } else if (activeTab === "depth") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading depth model…");
+        setLoadingProgress(0);
+        const { estimateDepth } = await import("@/lib/extra-services");
+        const out = await estimateDepth(image1, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        });
+        res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "superres") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading upscaler…");
+        setLoadingProgress(0);
+        const { superResolve } = await import("@/lib/extra-services");
+        const out = await superResolve(image1, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        });
+        res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "caption") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading captioner…");
+        setLoadingProgress(0);
+        const { captionImage } = await import("@/lib/extra-services");
+        const text = await captionImage(image1, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        });
+        res = { type: "text", content: text };
+      } else if (activeTab === "nsfw") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading NSFW classifier…");
+        setLoadingProgress(0);
+        const { nsfwCheck } = await import("@/lib/extra-services");
+        const out = await nsfwCheck(image1, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        });
+        const text = out.map((o, i) => `${i + 1}. ${o.label} — ${(o.score * 100).toFixed(1)}%`).join("\n");
+        res = { type: "text", content: `NSFW classification:\n${text}` };
+      } else if (activeTab === "faces") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading detector…");
+        setLoadingProgress(0);
+        const { detectFaces } = await import("@/lib/extra-services");
+        const out = await detectFaces(image1, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        });
+        const text = out.length
+          ? out.map((o, i) => `${i + 1}. ${o.label} (${(o.score * 100).toFixed(0)}%) [${Math.round(o.box.xmin)},${Math.round(o.box.ymin)} → ${Math.round(o.box.xmax)},${Math.round(o.box.ymax)}]`).join("\n")
+          : "No detections above threshold.";
+        res = { type: "text", content: `Detected ${out.length} object(s):\n${text}` };
+      } else if (activeTab === "similarity") {
+        if (!image1 || !image2) throw new Error("Upload both images first");
+        setLoadingMsg("Loading embedder…");
+        setLoadingProgress(0);
+        const { embedImage, cosineSimilarity } = await import("@/lib/extra-services");
+        const a = await embedImage(image1, ({ progress, message }) => {
+          setLoadingMsg(`Image 1: ${message}`); setLoadingProgress(progress * 0.5);
+        });
+        const b = await embedImage(image2, ({ progress, message }) => {
+          setLoadingMsg(`Image 2: ${message}`); setLoadingProgress(0.5 + progress * 0.5);
+        });
+        const sim = cosineSimilarity(a, b);
+        res = { type: "text", content: `Cosine similarity: ${(sim * 100).toFixed(2)}%\n${sim > 0.85 ? "Very similar" : sim > 0.6 ? "Related" : "Different"}` };
       } else if (activeTab === "bgRemove") {
         if (!image1) throw new Error("Upload an image first");
         setLoadingMsg("Preparing background removal…");
@@ -417,30 +496,65 @@ const Workspace = () => {
                     </div>
                   )}
 
-                  <Button
-                    onClick={handleProcess}
-                    disabled={
-                      loading ||
-                      (t.needsImage && !image1) ||
-                      (t.needsSecondImage && !image2) ||
-                      (t.needsPrompt && !t.needsImage && !prompt)
-                    }
-                    className="w-full"
-                  >
-                    {loading ? "Processing…" : `Run ${t.label}`}
-                  </Button>
+                  {t.id === "settings" && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm font-medium mb-1">Favicon</p>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          Choose a preset, upload your own image, or reset to default. Saved per browser.
+                        </p>
+                        <FaviconPicker />
+                      </div>
+                      <div className="rounded-md border p-3 bg-muted/30">
+                        <p className="text-xs font-medium mb-1">ONNX cache</p>
+                        <p className="text-[11px] text-muted-foreground mb-2">
+                          Downloaded ONNX models are cached in your browser for instant reuse.
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            const { clearOnnxCache } = await import("@/lib/onnx-loader");
+                            await clearOnnxCache();
+                            toast.success("ONNX cache cleared");
+                          }}
+                        >
+                          Clear ONNX cache
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
-                  {loading && loadingProgress == null && (
-                    <Progress value={undefined} className="h-1.5 animate-pulse" />
+                  {t.id !== "settings" && (
+                    <>
+                      <Button
+                        onClick={handleProcess}
+                        disabled={
+                          loading ||
+                          (t.needsImage && !image1) ||
+                          (t.needsSecondImage && !image2) ||
+                          (t.needsPrompt && !t.needsImage && !prompt)
+                        }
+                        className="w-full"
+                      >
+                        {loading ? "Processing…" : `Run ${t.label}`}
+                      </Button>
+
+                      {loading && loadingProgress == null && (
+                        <Progress value={undefined} className="h-1.5 animate-pulse" />
+                      )}
+                    </>
                   )}
                 </div>
 
-                <ResultDisplay
-                  result={result}
-                  loading={loading}
-                  loadingMessage={loadingMsg}
-                  loadingProgress={loadingProgress}
-                />
+                {t.id !== "settings" && (
+                  <ResultDisplay
+                    result={result}
+                    loading={loading}
+                    loadingMessage={loadingMsg}
+                    loadingProgress={loadingProgress}
+                  />
+                )}
               </div>
             </TabsContent>
           ))}

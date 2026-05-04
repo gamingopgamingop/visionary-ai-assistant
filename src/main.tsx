@@ -5,6 +5,9 @@ import App from "./App.tsx";
 import "./index.css";
 import { CLERK_PUBLISHABLE_KEY } from "./config/clerk";
 import { muiTheme } from "./lib/mui-theme";
+import { loadStoredFavicon } from "./lib/favicon";
+
+loadStoredFavicon();
 
 const Root = () => {
   const tree = (
