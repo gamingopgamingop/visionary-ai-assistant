@@ -496,21 +496,54 @@ const Workspace = () => {
                     </div>
                   )}
 
-                  <Button
-                    onClick={handleProcess}
-                    disabled={
-                      loading ||
-                      (t.needsImage && !image1) ||
-                      (t.needsSecondImage && !image2) ||
-                      (t.needsPrompt && !t.needsImage && !prompt)
-                    }
-                    className="w-full"
-                  >
-                    {loading ? "Processing…" : `Run ${t.label}`}
-                  </Button>
+                  {t.id === "settings" && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm font-medium mb-1">Favicon</p>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          Choose a preset, upload your own image, or reset to default. Saved per browser.
+                        </p>
+                        <FaviconPicker />
+                      </div>
+                      <div className="rounded-md border p-3 bg-muted/30">
+                        <p className="text-xs font-medium mb-1">ONNX cache</p>
+                        <p className="text-[11px] text-muted-foreground mb-2">
+                          Downloaded ONNX models are cached in your browser for instant reuse.
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            const { clearOnnxCache } = await import("@/lib/onnx-loader");
+                            await clearOnnxCache();
+                            toast.success("ONNX cache cleared");
+                          }}
+                        >
+                          Clear ONNX cache
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
-                  {loading && loadingProgress == null && (
-                    <Progress value={undefined} className="h-1.5 animate-pulse" />
+                  {t.id !== "settings" && (
+                    <>
+                      <Button
+                        onClick={handleProcess}
+                        disabled={
+                          loading ||
+                          (t.needsImage && !image1) ||
+                          (t.needsSecondImage && !image2) ||
+                          (t.needsPrompt && !t.needsImage && !prompt)
+                        }
+                        className="w-full"
+                      >
+                        {loading ? "Processing…" : `Run ${t.label}`}
+                      </Button>
+
+                      {loading && loadingProgress == null && (
+                        <Progress value={undefined} className="h-1.5 animate-pulse" />
+                      )}
+                    </>
                   )}
                 </div>
 
