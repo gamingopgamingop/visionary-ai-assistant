@@ -83,20 +83,18 @@ export function preprocessImageForMobileNet(
 
 export async function classifyImage(
   base64: string,
-  modelPath = "/models/mobilenetv2-7.onnx"
+  modelPath = "/models/mobilenetv2-7.onnx",
+  inputName = "input",
+  inputShape: number[] = [1, 3, 224, 224],
 ): Promise<{ label: string; score: number }[]> {
   const inputData = await preprocessImageForMobileNet(base64);
-  const output = await runInference(modelPath, "input", inputData, [
-    1, 3, 224, 224,
-  ]);
+  const output = await runInference(modelPath, inputName, inputData, inputShape);
   const scores = output.data as Float32Array;
 
-  // Get top 5 indices
   const indexed = Array.from(scores).map((s, i) => ({ i, s }));
   indexed.sort((a, b) => b.s - a.s);
   const top5 = indexed.slice(0, 5);
 
-  // Softmax for probabilities
   const maxScore = top5[0].s;
   const exps = top5.map((t) => Math.exp(t.s - maxScore));
   const sumExps = exps.reduce((a, b) => a + b, 0);
