@@ -16,6 +16,8 @@ import HistoryPanel from "@/components/HistoryPanel";
 import PromptParams, { DEFAULT_PROMPT_PARAMS, type PromptParamsValue } from "@/components/PromptParams";
 import PromptPresetPicker from "@/components/PromptPresetPicker";
 import BatchBgRemove from "@/components/BatchBgRemove";
+import OnnxModelPicker, { type OnnxSelection } from "@/components/OnnxModelPicker";
+import { ONNX_MODELS } from "@/lib/onnx-models";
 import { applyWasmEffect, type WasmEffect } from "@/lib/wasm-image";
 import { extractPalette } from "@/lib/color-palette";
 import { editImage, type ImageFormat } from "@/lib/basic-editor";
@@ -78,6 +80,12 @@ const Workspace = () => {
   const [wasmEffect, setWasmEffect] = usePersistedState<WasmEffect>("ait_ws_wasm", "grayscale");
   const [promptParams, setPromptParams] = usePersistedState<PromptParamsValue>("ait_ws_params", DEFAULT_PROMPT_PARAMS);
   const [historyKey, setHistoryKey] = useState(0);
+  const [onnxSel, setOnnxSel] = useState<OnnxSelection>({
+    path: ONNX_MODELS[0].path,
+    inputName: ONNX_MODELS[0].inputName,
+    inputShape: ONNX_MODELS[0].inputShape,
+    label: ONNX_MODELS[0].label,
+  });
 
   // Editor controls (persisted)
   const [editWidth, setEditWidth] = usePersistedState<string>("ait_ws_edit_w", "");
@@ -137,10 +145,11 @@ const Workspace = () => {
         res = { type: "image", content: out, original: image1 };
       } else if (activeTab === "onnx") {
         if (!image1) throw new Error("Upload an image first");
-        setLoadingMsg("Loading ONNX model…");
+        if (!onnxSel.path) throw new Error("Select or provide an ONNX model");
+        setLoadingMsg(`Loading ${onnxSel.label}…`);
         const { classifyImage } = await import("@/lib/onnx-inference");
         const start = performance.now();
-        const predictions = await classifyImage(image1);
+        const predictions = await classifyImage(image1, onnxSel.path, onnxSel.inputName, onnxSel.inputShape);
         const elapsed = Math.round(performance.now() - start);
         const text = predictions
           .map((p, i) => `${i + 1}. ${p.label} — ${(p.score * 100).toFixed(1)}%`)
@@ -148,7 +157,7 @@ const Workspace = () => {
         toast.success(`ONNX inference in ${elapsed}ms`);
         res = {
           type: "text",
-          content: `ONNX Runtime Web — MobileNet v2 Classification\nProcessed in ${elapsed}ms\n\nTop predictions:\n${text}`,
+          content: `ONNX Runtime Web — ${onnxSel.label}\nProcessed in ${elapsed}ms\n\nTop predictions:\n${text}`,
         };
       } else if (activeTab === "bgRemove") {
         if (!image1) throw new Error("Upload an image first");
@@ -342,10 +351,12 @@ const Workspace = () => {
                   )}
 
                   {t.id === "onnx" && (
-                    <p className="text-xs text-muted-foreground">
-                      Runs MobileNet v2 classification via ONNX Runtime Web (WASM).
-                      Place custom <code>.onnx</code> models in <code>public/models/</code>.
-                    </p>
+                    <div className="space-y-2">
+                      <OnnxModelPicker onChange={setOnnxSel} />
+                      <p className="text-xs text-muted-foreground">
+                        Runs in-browser via ONNX Runtime Web (WASM). Drop bundled models in <code>public/models/</code>, paste a URL, or upload a <code>.onnx</code> file.
+                      </p>
+                    </div>
                   )}
 
                   {t.id === "bgRemove" && (
