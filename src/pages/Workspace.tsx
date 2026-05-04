@@ -17,6 +17,7 @@ import PromptParams, { DEFAULT_PROMPT_PARAMS, type PromptParamsValue } from "@/c
 import PromptPresetPicker from "@/components/PromptPresetPicker";
 import BatchBgRemove from "@/components/BatchBgRemove";
 import OnnxModelPicker, { type OnnxSelection } from "@/components/OnnxModelPicker";
+import FaviconPicker from "@/components/FaviconPicker";
 import { ONNX_MODELS } from "@/lib/onnx-models";
 import { applyWasmEffect, type WasmEffect } from "@/lib/wasm-image";
 import { extractPalette } from "@/lib/color-palette";
@@ -25,12 +26,14 @@ import { addHistory, type HistoryItem } from "@/lib/history";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import {
   Eye, ScanSearch, FileText, GitCompare, Sparkles, Eraser, Palette, Wand2, Cpu, Zap,
-  Scissors, Droplet, MessageSquareQuote, Crop,
+  Scissors, Droplet, MessageSquareQuote, Crop, Mountain, Maximize2, Smile, ShieldAlert,
+  Type, Layers, Settings as SettingsIcon,
 } from "lucide-react";
 
 type TabId =
   | "analyze" | "detect" | "ocr" | "compare" | "enhance" | "inpaint" | "style" | "generate"
-  | "wasm" | "onnx" | "bgRemove" | "palette" | "imageToPrompt" | "editor";
+  | "wasm" | "onnx" | "bgRemove" | "palette" | "imageToPrompt" | "editor"
+  | "depth" | "superres" | "caption" | "nsfw" | "faces" | "similarity" | "settings";
 
 const tabs: {
   id: TabId; label: string; icon: React.ElementType;
@@ -46,11 +49,18 @@ const tabs: {
   { id: "style", label: "Style", icon: Palette, needsImage: true, needsPrompt: true, hasPromptParams: true },
   { id: "generate", label: "Generate", icon: Wand2, needsImage: false, needsPrompt: true, hasPromptParams: true },
   { id: "imageToPrompt", label: "Image→Prompt", icon: MessageSquareQuote, needsImage: true },
+  { id: "caption", label: "Caption", icon: Type, needsImage: true },
   { id: "bgRemove", label: "BG Remove", icon: Scissors, needsImage: true },
+  { id: "depth", label: "Depth", icon: Mountain, needsImage: true },
+  { id: "superres", label: "Super-Res", icon: Maximize2, needsImage: true },
+  { id: "faces", label: "Faces", icon: Smile, needsImage: true },
+  { id: "nsfw", label: "NSFW", icon: ShieldAlert, needsImage: true },
+  { id: "similarity", label: "Similarity", icon: Layers, needsImage: true, needsSecondImage: true },
   { id: "palette", label: "Palette", icon: Droplet, needsImage: true },
   { id: "wasm", label: "WASM FX", icon: Zap, needsImage: true },
   { id: "onnx", label: "ONNX AI", icon: Cpu, needsImage: true },
   { id: "editor", label: "Editor", icon: Crop, needsImage: true },
+  { id: "settings", label: "Settings", icon: SettingsIcon, needsImage: false },
 ];
 
 const wasmEffects: { value: WasmEffect; label: string }[] = [
