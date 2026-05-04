@@ -10,33 +10,20 @@
  */
 
 import * as ort from "onnxruntime-web";
+import { loadModelWithProgress, type LoadProgress } from "./onnx-loader";
 
-// Configure ONNX Runtime to use WASM backend
 ort.env.wasm.numThreads = 1;
 
-let session: ort.InferenceSession | null = null;
-let currentModelPath = "";
-
-export async function loadModel(
-  modelPath: string
-): Promise<ort.InferenceSession> {
-  if (session && currentModelPath === modelPath) return session;
-
-  session?.release();
-  session = await ort.InferenceSession.create(modelPath, {
-    executionProviders: ["wasm"],
-  });
-  currentModelPath = modelPath;
-  return session;
-}
+export type { LoadProgress };
 
 export async function runInference(
   modelPath: string,
   inputName: string,
   inputData: Float32Array,
-  inputShape: number[]
+  inputShape: number[],
+  onProgress?: (p: LoadProgress) => void,
 ): Promise<ort.Tensor> {
-  const sess = await loadModel(modelPath);
+  const sess = await loadModelWithProgress(modelPath, onProgress);
   const tensor = new ort.Tensor("float32", inputData, inputShape);
   const results = await sess.run({ [inputName]: tensor });
   const outputName = Object.keys(results)[0];
@@ -86,9 +73,10 @@ export async function classifyImage(
   modelPath = "/models/mobilenetv2-7.onnx",
   inputName = "input",
   inputShape: number[] = [1, 3, 224, 224],
+  onProgress?: (p: LoadProgress) => void,
 ): Promise<{ label: string; score: number }[]> {
   const inputData = await preprocessImageForMobileNet(base64);
-  const output = await runInference(modelPath, inputName, inputData, inputShape);
+  const output = await runInference(modelPath, inputName, inputData, inputShape, onProgress);
   const scores = output.data as Float32Array;
 
   const indexed = Array.from(scores).map((s, i) => ({ i, s }));
