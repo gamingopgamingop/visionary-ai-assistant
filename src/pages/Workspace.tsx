@@ -634,22 +634,38 @@ const Workspace = () => {
                         </p>
                         <FaviconPicker />
                       </div>
-                      <div className="rounded-md border p-3 bg-muted/30">
-                        <p className="text-xs font-medium mb-1">ONNX cache</p>
+                      <div className="rounded-md border p-3 bg-muted/30 space-y-2">
+                        <p className="text-xs font-medium mb-1">ONNX & model caches</p>
                         <p className="text-[11px] text-muted-foreground mb-2">
-                          Downloaded ONNX models are cached in your browser for instant reuse.
+                          Strong clear: drops in-memory sessions, deletes our IndexedDB store, removes Transformers.js / HuggingFace IndexedDB caches, and purges related CacheStorage entries.
                         </p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={async () => {
-                            const { clearOnnxCache } = await import("@/lib/onnx-loader");
-                            await clearOnnxCache();
-                            toast.success("ONNX cache cleared");
-                          }}
-                        >
-                          Clear ONNX cache
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              const { clearOnnxCache } = await import("@/lib/onnx-loader");
+                              const r = await clearOnnxCache();
+                              toast.success(
+                                `Cleared: ${r.sessionsCleared} session(s), IDB ${r.idbCleared ? "✓" : "✗"}, Transformers ${r.transformersCleared ? "✓" : "✗"}, ${r.cachesCleared} CacheStorage`,
+                              );
+                            }}
+                          >
+                            Clear all model caches
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={async () => {
+                              if (!confirm("Hard reset: clear all model caches AND reload the page?")) return;
+                              const { clearOnnxCache } = await import("@/lib/onnx-loader");
+                              await clearOnnxCache();
+                              location.reload();
+                            }}
+                          >
+                            Hard reset & reload
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}
