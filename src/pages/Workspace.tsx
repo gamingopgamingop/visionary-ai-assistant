@@ -461,7 +461,61 @@ const Workspace = () => {
                     </div>
                   )}
 
-                  {t.id === "bgRemove" && (
+                  {t.id === "similarity" && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Gallery (compare query against many)</Label>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={async (e) => {
+                          const files = Array.from(e.target.files ?? []);
+                          const urls = await Promise.all(files.map(fileToBase64));
+                          setGallery((g) => [...g, ...urls]);
+                          e.target.value = "";
+                        }}
+                      />
+                      {gallery.length > 0 && (
+                        <div className="grid grid-cols-4 gap-2">
+                          {gallery.map((url, i) => (
+                            <div key={i} className="relative group">
+                              <img src={url} alt={`Gallery ${i + 1}`} className="w-full aspect-square object-cover rounded border" />
+                              <button
+                                onClick={() => setGallery((g) => g.filter((_, j) => j !== i))}
+                                className="absolute top-0.5 right-0.5 rounded bg-background/90 px-1 text-[10px] border opacity-0 group-hover:opacity-100"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {similarityRanked.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium">Ranked results</p>
+                          <div className="grid grid-cols-3 gap-2">
+                            {similarityRanked.map((r, i) => (
+                              <div key={i} className="space-y-1">
+                                <img src={r.url} alt={`Rank ${i + 1}`} className="w-full aspect-square object-cover rounded border" />
+                                <p className="text-[11px] text-center">#{i + 1} — {(r.sim * 100).toFixed(1)}%</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <p className="text-[11px] text-muted-foreground">
+                        If gallery is empty, a single second image is used instead.
+                      </p>
+                      {gallery.length === 0 && (
+                        <ImageUploader
+                          label="Image 2 (optional)"
+                          image={image2}
+                          onDrop={(f) => handleImageDrop(f, 2)}
+                          onClear={() => setImage2(null)}
+                        />
+                      )}
+                    </div>
+                  )}
                     <div className="space-y-3">
                       <p className="text-xs text-muted-foreground">
                         Single image uses RMBG-1.4 with WebGPU. Use the batch panel below for multi-image jobs with custom model + size.
