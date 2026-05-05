@@ -222,7 +222,7 @@ const Workspace = () => {
         setLoadingProgress(0);
         const { detectFaces } = await import("@/lib/extra-services");
         const { drawBoxesOnImage } = await import("@/lib/draw-boxes");
-        const out = await detectFaces(image1, ({ progress, message }) => {
+        const out = await detectFaces(image1, faceThreshold, ({ progress, message }) => {
           setLoadingMsg(message); setLoadingProgress(progress);
         });
         if (!out.length) {
