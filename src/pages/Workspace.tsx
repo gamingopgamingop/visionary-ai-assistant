@@ -218,26 +218,45 @@ const Workspace = () => {
         setLoadingMsg("Loading detector…");
         setLoadingProgress(0);
         const { detectFaces } = await import("@/lib/extra-services");
+        const { drawBoxesOnImage } = await import("@/lib/draw-boxes");
         const out = await detectFaces(image1, ({ progress, message }) => {
           setLoadingMsg(message); setLoadingProgress(progress);
         });
-        const text = out.length
-          ? out.map((o, i) => `${i + 1}. ${o.label} (${(o.score * 100).toFixed(0)}%) [${Math.round(o.box.xmin)},${Math.round(o.box.ymin)} → ${Math.round(o.box.xmax)},${Math.round(o.box.ymax)}]`).join("\n")
-          : "No detections above threshold.";
-        res = { type: "text", content: `Detected ${out.length} object(s):\n${text}` };
+        if (!out.length) {
+          res = { type: "text", content: "No detections above threshold." };
+        } else {
+          const annotated = await drawBoxesOnImage(image1, out);
+          const summary = out.map((o, i) => `${i + 1}. ${o.label} — ${(o.score * 100).toFixed(0)}%`).join("\n");
+          toast.success(`Detected ${out.length} object(s)`);
+          res = { type: "image", content: annotated, original: image1 };
+          // Stash the summary in history as a side note via prompt-less text
+          await saveToHistory("faces", "Faces", { type: "text", content: summary });
+        }
       } else if (activeTab === "similarity") {
-        if (!image1 || !image2) throw new Error("Upload both images first");
+        if (!image1) throw new Error("Upload a query image first");
+        if (!gallery.length && !image2) throw new Error("Add gallery images or a second image");
         setLoadingMsg("Loading embedder…");
         setLoadingProgress(0);
         const { embedImage, cosineSimilarity } = await import("@/lib/extra-services");
+        const targets = gallery.length ? gallery : [image2!];
         const a = await embedImage(image1, ({ progress, message }) => {
-          setLoadingMsg(`Image 1: ${message}`); setLoadingProgress(progress * 0.5);
+          setLoadingMsg(`Query: ${message}`);
+          setLoadingProgress(progress / (targets.length + 1));
         });
-        const b = await embedImage(image2, ({ progress, message }) => {
-          setLoadingMsg(`Image 2: ${message}`); setLoadingProgress(0.5 + progress * 0.5);
-        });
-        const sim = cosineSimilarity(a, b);
-        res = { type: "text", content: `Cosine similarity: ${(sim * 100).toFixed(2)}%\n${sim > 0.85 ? "Very similar" : sim > 0.6 ? "Related" : "Different"}` };
+        const sims: { idx: number; sim: number }[] = [];
+        for (let i = 0; i < targets.length; i++) {
+          const b = await embedImage(targets[i], ({ progress, message }) => {
+            setLoadingMsg(`Image ${i + 1}/${targets.length}: ${message}`);
+            setLoadingProgress((1 + i + progress) / (targets.length + 1));
+          });
+          sims.push({ idx: i, sim: cosineSimilarity(a, b) });
+        }
+        sims.sort((x, y) => y.sim - x.sim);
+        const text = sims
+          .map((s, rank) => `#${rank + 1} — image ${s.idx + 1}: ${(s.sim * 100).toFixed(2)}%`)
+          .join("\n");
+        setSimilarityRanked(sims.map((s) => ({ url: targets[s.idx], sim: s.sim })));
+        res = { type: "text", content: `Cosine similarity ranking:\n${text}` };
       } else if (activeTab === "bgRemove") {
         if (!image1) throw new Error("Upload an image first");
         setLoadingMsg("Preparing background removal…");
