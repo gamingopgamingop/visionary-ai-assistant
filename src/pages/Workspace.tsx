@@ -516,6 +516,8 @@ const Workspace = () => {
                       )}
                     </div>
                   )}
+
+                  {t.id === "bgRemove" && (
                     <div className="space-y-3">
                       <p className="text-xs text-muted-foreground">
                         Single image uses RMBG-1.4 with WebGPU. Use the batch panel below for multi-image jobs with custom model + size.
