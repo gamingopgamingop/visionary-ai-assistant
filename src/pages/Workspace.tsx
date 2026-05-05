@@ -96,8 +96,9 @@ const Workspace = () => {
     inputShape: ONNX_MODELS[0].inputShape,
     label: ONNX_MODELS[0].label,
   });
-  const [gallery, setGallery] = useState<string[]>([]);
+  const [gallery, setGallery] = usePersistedState<string[]>("ait_ws_sim_gallery", []);
   const [similarityRanked, setSimilarityRanked] = useState<{ url: string; sim: number }[]>([]);
+  const [faceThreshold, setFaceThreshold] = usePersistedState<number>("ait_ws_face_thresh", 0.5);
 
   // Editor controls (persisted)
   const [editWidth, setEditWidth] = usePersistedState<string>("ait_ws_edit_w", "");
