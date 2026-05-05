@@ -55,7 +55,7 @@ const tabs: {
   { id: "superres", label: "Super-Res", icon: Maximize2, needsImage: true },
   { id: "faces", label: "Faces", icon: Smile, needsImage: true },
   { id: "nsfw", label: "NSFW", icon: ShieldAlert, needsImage: true },
-  { id: "similarity", label: "Similarity", icon: Layers, needsImage: true, needsSecondImage: true },
+  { id: "similarity", label: "Similarity", icon: Layers, needsImage: true },
   { id: "palette", label: "Palette", icon: Droplet, needsImage: true },
   { id: "wasm", label: "WASM FX", icon: Zap, needsImage: true },
   { id: "onnx", label: "ONNX AI", icon: Cpu, needsImage: true },
@@ -96,6 +96,8 @@ const Workspace = () => {
     inputShape: ONNX_MODELS[0].inputShape,
     label: ONNX_MODELS[0].label,
   });
+  const [gallery, setGallery] = useState<string[]>([]);
+  const [similarityRanked, setSimilarityRanked] = useState<{ url: string; sim: number }[]>([]);
 
   // Editor controls (persisted)
   const [editWidth, setEditWidth] = usePersistedState<string>("ait_ws_edit_w", "");
@@ -218,26 +220,45 @@ const Workspace = () => {
         setLoadingMsg("Loading detector…");
         setLoadingProgress(0);
         const { detectFaces } = await import("@/lib/extra-services");
+        const { drawBoxesOnImage } = await import("@/lib/draw-boxes");
         const out = await detectFaces(image1, ({ progress, message }) => {
           setLoadingMsg(message); setLoadingProgress(progress);
         });
-        const text = out.length
-          ? out.map((o, i) => `${i + 1}. ${o.label} (${(o.score * 100).toFixed(0)}%) [${Math.round(o.box.xmin)},${Math.round(o.box.ymin)} → ${Math.round(o.box.xmax)},${Math.round(o.box.ymax)}]`).join("\n")
-          : "No detections above threshold.";
-        res = { type: "text", content: `Detected ${out.length} object(s):\n${text}` };
+        if (!out.length) {
+          res = { type: "text", content: "No detections above threshold." };
+        } else {
+          const annotated = await drawBoxesOnImage(image1, out);
+          const summary = out.map((o, i) => `${i + 1}. ${o.label} — ${(o.score * 100).toFixed(0)}%`).join("\n");
+          toast.success(`Detected ${out.length} object(s)`);
+          res = { type: "image", content: annotated, original: image1 };
+          // Stash the summary in history as a side note via prompt-less text
+          await saveToHistory("faces", "Faces", { type: "text", content: summary });
+        }
       } else if (activeTab === "similarity") {
-        if (!image1 || !image2) throw new Error("Upload both images first");
+        if (!image1) throw new Error("Upload a query image first");
+        if (!gallery.length && !image2) throw new Error("Add gallery images or a second image");
         setLoadingMsg("Loading embedder…");
         setLoadingProgress(0);
         const { embedImage, cosineSimilarity } = await import("@/lib/extra-services");
+        const targets = gallery.length ? gallery : [image2!];
         const a = await embedImage(image1, ({ progress, message }) => {
-          setLoadingMsg(`Image 1: ${message}`); setLoadingProgress(progress * 0.5);
+          setLoadingMsg(`Query: ${message}`);
+          setLoadingProgress(progress / (targets.length + 1));
         });
-        const b = await embedImage(image2, ({ progress, message }) => {
-          setLoadingMsg(`Image 2: ${message}`); setLoadingProgress(0.5 + progress * 0.5);
-        });
-        const sim = cosineSimilarity(a, b);
-        res = { type: "text", content: `Cosine similarity: ${(sim * 100).toFixed(2)}%\n${sim > 0.85 ? "Very similar" : sim > 0.6 ? "Related" : "Different"}` };
+        const sims: { idx: number; sim: number }[] = [];
+        for (let i = 0; i < targets.length; i++) {
+          const b = await embedImage(targets[i], ({ progress, message }) => {
+            setLoadingMsg(`Image ${i + 1}/${targets.length}: ${message}`);
+            setLoadingProgress((1 + i + progress) / (targets.length + 1));
+          });
+          sims.push({ idx: i, sim: cosineSimilarity(a, b) });
+        }
+        sims.sort((x, y) => y.sim - x.sim);
+        const text = sims
+          .map((s, rank) => `#${rank + 1} — image ${s.idx + 1}: ${(s.sim * 100).toFixed(2)}%`)
+          .join("\n");
+        setSimilarityRanked(sims.map((s) => ({ url: targets[s.idx], sim: s.sim })));
+        res = { type: "text", content: `Cosine similarity ranking:\n${text}` };
       } else if (activeTab === "bgRemove") {
         if (!image1) throw new Error("Upload an image first");
         setLoadingMsg("Preparing background removal…");
@@ -307,6 +328,8 @@ const Workspace = () => {
     setImage2(null);
     setPrompt("");
     setResult(null);
+    setGallery([]);
+    setSimilarityRanked([]);
   };
 
   const handleRestore = (item: HistoryItem) => {
@@ -435,6 +458,62 @@ const Workspace = () => {
                       <p className="text-xs text-muted-foreground">
                         Runs in-browser via ONNX Runtime Web (WASM). Drop bundled models in <code>public/models/</code>, paste a URL, or upload a <code>.onnx</code> file.
                       </p>
+                    </div>
+                  )}
+
+                  {t.id === "similarity" && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Gallery (compare query against many)</Label>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={async (e) => {
+                          const files = Array.from(e.target.files ?? []);
+                          const urls = await Promise.all(files.map(fileToBase64));
+                          setGallery((g) => [...g, ...urls]);
+                          e.target.value = "";
+                        }}
+                      />
+                      {gallery.length > 0 && (
+                        <div className="grid grid-cols-4 gap-2">
+                          {gallery.map((url, i) => (
+                            <div key={i} className="relative group">
+                              <img src={url} alt={`Gallery ${i + 1}`} className="w-full aspect-square object-cover rounded border" />
+                              <button
+                                onClick={() => setGallery((g) => g.filter((_, j) => j !== i))}
+                                className="absolute top-0.5 right-0.5 rounded bg-background/90 px-1 text-[10px] border opacity-0 group-hover:opacity-100"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {similarityRanked.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium">Ranked results</p>
+                          <div className="grid grid-cols-3 gap-2">
+                            {similarityRanked.map((r, i) => (
+                              <div key={i} className="space-y-1">
+                                <img src={r.url} alt={`Rank ${i + 1}`} className="w-full aspect-square object-cover rounded border" />
+                                <p className="text-[11px] text-center">#{i + 1} — {(r.sim * 100).toFixed(1)}%</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <p className="text-[11px] text-muted-foreground">
+                        If gallery is empty, a single second image is used instead.
+                      </p>
+                      {gallery.length === 0 && (
+                        <ImageUploader
+                          label="Image 2 (optional)"
+                          image={image2}
+                          onDrop={(f) => handleImageDrop(f, 2)}
+                          onClear={() => setImage2(null)}
+                        />
+                      )}
                     </div>
                   )}
 

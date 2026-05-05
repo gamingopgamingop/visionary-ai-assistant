@@ -5,7 +5,7 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
-import { Download, Eye, EyeOff, ChevronDown } from "lucide-react";
+import { Download, Eye, EyeOff, ChevronDown, ToggleLeft, ToggleRight } from "lucide-react";
 import { downloadAs, type ExportFormat } from "@/lib/export-image";
 
 interface Props {
@@ -17,6 +17,8 @@ interface Props {
 const ImageResult = ({ imageUrl, originalUrl, showCheckerBg }: Props) => {
   const [quality, setQuality] = useState(0.92);
   const [showOriginal, setShowOriginal] = useState(false);
+  const [lockedOriginal, setLockedOriginal] = useState(false);
+  const visibleOriginal = lockedOriginal || showOriginal;
 
   const doDownload = (format: ExportFormat) => downloadAs(imageUrl, format, quality);
 
@@ -28,22 +30,31 @@ const ImageResult = ({ imageUrl, originalUrl, showCheckerBg }: Props) => {
     <div className="space-y-3">
       <div className={`relative rounded-lg border overflow-hidden ${checker}`}>
         <img
-          src={showOriginal && originalUrl ? originalUrl : imageUrl}
-          alt={showOriginal ? "Original" : "Result"}
+          src={visibleOriginal && originalUrl ? originalUrl : imageUrl}
+          alt={visibleOriginal ? "Original" : "Result"}
           className="w-full object-contain max-h-[500px]"
         />
         {originalUrl && (
-          <button
-            onMouseDown={() => setShowOriginal(true)}
-            onMouseUp={() => setShowOriginal(false)}
-            onMouseLeave={() => setShowOriginal(false)}
-            onTouchStart={() => setShowOriginal(true)}
-            onTouchEnd={() => setShowOriginal(false)}
-            className="absolute bottom-2 left-2 inline-flex items-center gap-1.5 rounded-md bg-background/90 backdrop-blur px-2.5 py-1 text-xs border shadow-sm"
-          >
-            {showOriginal ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-            Hold to see original
-          </button>
+          <div className="absolute bottom-2 left-2 flex gap-1.5">
+            <button
+              onMouseDown={() => setShowOriginal(true)}
+              onMouseUp={() => setShowOriginal(false)}
+              onMouseLeave={() => setShowOriginal(false)}
+              onTouchStart={() => setShowOriginal(true)}
+              onTouchEnd={() => setShowOriginal(false)}
+              className="inline-flex items-center gap-1.5 rounded-md bg-background/90 backdrop-blur px-2.5 py-1 text-xs border shadow-sm"
+            >
+              {visibleOriginal ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+              Hold for original
+            </button>
+            <button
+              onClick={() => setLockedOriginal((v) => !v)}
+              className="inline-flex items-center gap-1.5 rounded-md bg-background/90 backdrop-blur px-2.5 py-1 text-xs border shadow-sm"
+            >
+              {lockedOriginal ? <ToggleRight className="h-3 w-3" /> : <ToggleLeft className="h-3 w-3" />}
+              {lockedOriginal ? "Showing original" : "Showing result"}
+            </button>
+          </div>
         )}
       </div>
 
