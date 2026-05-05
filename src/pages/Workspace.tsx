@@ -55,7 +55,7 @@ const tabs: {
   { id: "superres", label: "Super-Res", icon: Maximize2, needsImage: true },
   { id: "faces", label: "Faces", icon: Smile, needsImage: true },
   { id: "nsfw", label: "NSFW", icon: ShieldAlert, needsImage: true },
-  { id: "similarity", label: "Similarity", icon: Layers, needsImage: true, needsSecondImage: true },
+  { id: "similarity", label: "Similarity", icon: Layers, needsImage: true },
   { id: "palette", label: "Palette", icon: Droplet, needsImage: true },
   { id: "wasm", label: "WASM FX", icon: Zap, needsImage: true },
   { id: "onnx", label: "ONNX AI", icon: Cpu, needsImage: true },
@@ -96,6 +96,8 @@ const Workspace = () => {
     inputShape: ONNX_MODELS[0].inputShape,
     label: ONNX_MODELS[0].label,
   });
+  const [gallery, setGallery] = useState<string[]>([]);
+  const [similarityRanked, setSimilarityRanked] = useState<{ url: string; sim: number }[]>([]);
 
   // Editor controls (persisted)
   const [editWidth, setEditWidth] = usePersistedState<string>("ait_ws_edit_w", "");
