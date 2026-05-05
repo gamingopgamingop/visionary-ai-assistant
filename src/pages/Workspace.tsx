@@ -328,6 +328,8 @@ const Workspace = () => {
     setImage2(null);
     setPrompt("");
     setResult(null);
+    setGallery([]);
+    setSimilarityRanked([]);
   };
 
   const handleRestore = (item: HistoryItem) => {
