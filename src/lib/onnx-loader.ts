@@ -99,12 +99,54 @@ export async function loadModelWithProgress(
   return session;
 }
 
-export async function clearOnnxCache() {
-  const db = await openDB();
-  return new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).clear();
-    tx.oncomplete = () => { sessionCache.clear(); resolve(); };
-    tx.onerror = () => reject(tx.error);
-  });
+export async function clearOnnxCache(): Promise<{ idbCleared: boolean; transformersCleared: boolean; cachesCleared: number; sessionsCleared: number }> {
+  const sessionsCleared = sessionCache.size;
+  sessionCache.clear();
+
+  // 1. Delete our own IndexedDB store entirely (stronger than .clear())
+  let idbCleared = false;
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const req = indexedDB.deleteDatabase(DB_NAME);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+      req.onblocked = () => resolve();
+    });
+    idbCleared = true;
+  } catch { /* ignore */ }
+
+  // 2. Delete transformers.js IndexedDB caches
+  let transformersCleared = false;
+  try {
+    if ("databases" in indexedDB) {
+      const dbs = await (indexedDB as any).databases();
+      for (const d of dbs) {
+        if (d.name && /transformers|onnx|huggingface/i.test(d.name)) {
+          await new Promise<void>((resolve) => {
+            const req = indexedDB.deleteDatabase(d.name);
+            req.onsuccess = () => resolve();
+            req.onerror = () => resolve();
+            req.onblocked = () => resolve();
+          });
+        }
+      }
+      transformersCleared = true;
+    }
+  } catch { /* ignore */ }
+
+  // 3. Delete CacheStorage entries used by transformers.js
+  let cachesCleared = 0;
+  try {
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      for (const k of keys) {
+        if (/transformers|onnx|huggingface|model/i.test(k)) {
+          await caches.delete(k);
+          cachesCleared++;
+        }
+      }
+    }
+  } catch { /* ignore */ }
+
+  return { idbCleared, transformersCleared, cachesCleared, sessionsCleared };
 }

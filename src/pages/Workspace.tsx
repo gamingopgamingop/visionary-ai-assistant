@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -96,8 +97,9 @@ const Workspace = () => {
     inputShape: ONNX_MODELS[0].inputShape,
     label: ONNX_MODELS[0].label,
   });
-  const [gallery, setGallery] = useState<string[]>([]);
+  const [gallery, setGallery] = usePersistedState<string[]>("ait_ws_sim_gallery", []);
   const [similarityRanked, setSimilarityRanked] = useState<{ url: string; sim: number }[]>([]);
+  const [faceThreshold, setFaceThreshold] = usePersistedState<number>("ait_ws_face_thresh", 0.5);
 
   // Editor controls (persisted)
   const [editWidth, setEditWidth] = usePersistedState<string>("ait_ws_edit_w", "");
@@ -221,7 +223,7 @@ const Workspace = () => {
         setLoadingProgress(0);
         const { detectFaces } = await import("@/lib/extra-services");
         const { drawBoxesOnImage } = await import("@/lib/draw-boxes");
-        const out = await detectFaces(image1, ({ progress, message }) => {
+        const out = await detectFaces(image1, faceThreshold, ({ progress, message }) => {
           setLoadingMsg(message); setLoadingProgress(progress);
         });
         if (!out.length) {
@@ -328,7 +330,6 @@ const Workspace = () => {
     setImage2(null);
     setPrompt("");
     setResult(null);
-    setGallery([]);
     setSimilarityRanked([]);
   };
 
@@ -461,9 +462,42 @@ const Workspace = () => {
                     </div>
                   )}
 
+                  {t.id === "faces" && (
+                    <div className="space-y-2 rounded-md border p-3 bg-muted/30">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs">Confidence threshold</Label>
+                        <span className="text-xs font-mono text-muted-foreground">{(faceThreshold * 100).toFixed(0)}%</span>
+                      </div>
+                      <Slider
+                        value={[faceThreshold * 100]}
+                        min={10}
+                        max={95}
+                        step={1}
+                        onValueChange={([v]) => setFaceThreshold(v / 100)}
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        Lower = more detections. Result image is annotated and downloadable via the Export menu.
+                      </p>
+                    </div>
+                  )}
+
                   {t.id === "similarity" && (
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">Gallery (compare query against many)</Label>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-muted-foreground">
+                          Gallery {gallery.length > 0 && <span className="text-foreground">({gallery.length})</span>}
+                        </Label>
+                        {gallery.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-xs"
+                            onClick={() => { setGallery([]); setSimilarityRanked([]); }}
+                          >
+                            Clear all
+                          </Button>
+                        )}
+                      </div>
                       <Input
                         type="file"
                         accept="image/*"
@@ -480,12 +514,28 @@ const Workspace = () => {
                           {gallery.map((url, i) => (
                             <div key={i} className="relative group">
                               <img src={url} alt={`Gallery ${i + 1}`} className="w-full aspect-square object-cover rounded border" />
-                              <button
-                                onClick={() => setGallery((g) => g.filter((_, j) => j !== i))}
-                                className="absolute top-0.5 right-0.5 rounded bg-background/90 px-1 text-[10px] border opacity-0 group-hover:opacity-100"
-                              >
-                                ✕
-                              </button>
+                              <div className="absolute inset-x-0.5 top-0.5 flex justify-between opacity-0 group-hover:opacity-100">
+                                <div className="flex gap-0.5">
+                                  <button
+                                    disabled={i === 0}
+                                    onClick={() => setGallery((g) => {
+                                      const n = [...g];[n[i - 1], n[i]] = [n[i], n[i - 1]]; return n;
+                                    })}
+                                    className="rounded bg-background/90 px-1 text-[10px] border disabled:opacity-30"
+                                  >‹</button>
+                                  <button
+                                    disabled={i === gallery.length - 1}
+                                    onClick={() => setGallery((g) => {
+                                      const n = [...g];[n[i + 1], n[i]] = [n[i], n[i + 1]]; return n;
+                                    })}
+                                    className="rounded bg-background/90 px-1 text-[10px] border disabled:opacity-30"
+                                  >›</button>
+                                </div>
+                                <button
+                                  onClick={() => setGallery((g) => g.filter((_, j) => j !== i))}
+                                  className="rounded bg-background/90 px-1 text-[10px] border"
+                                >✕</button>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -504,7 +554,7 @@ const Workspace = () => {
                         </div>
                       )}
                       <p className="text-[11px] text-muted-foreground">
-                        If gallery is empty, a single second image is used instead.
+                        Gallery persists across sessions. If empty, a single second image is used instead.
                       </p>
                       {gallery.length === 0 && (
                         <ImageUploader
@@ -584,22 +634,38 @@ const Workspace = () => {
                         </p>
                         <FaviconPicker />
                       </div>
-                      <div className="rounded-md border p-3 bg-muted/30">
-                        <p className="text-xs font-medium mb-1">ONNX cache</p>
+                      <div className="rounded-md border p-3 bg-muted/30 space-y-2">
+                        <p className="text-xs font-medium mb-1">ONNX & model caches</p>
                         <p className="text-[11px] text-muted-foreground mb-2">
-                          Downloaded ONNX models are cached in your browser for instant reuse.
+                          Strong clear: drops in-memory sessions, deletes our IndexedDB store, removes Transformers.js / HuggingFace IndexedDB caches, and purges related CacheStorage entries.
                         </p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={async () => {
-                            const { clearOnnxCache } = await import("@/lib/onnx-loader");
-                            await clearOnnxCache();
-                            toast.success("ONNX cache cleared");
-                          }}
-                        >
-                          Clear ONNX cache
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              const { clearOnnxCache } = await import("@/lib/onnx-loader");
+                              const r = await clearOnnxCache();
+                              toast.success(
+                                `Cleared: ${r.sessionsCleared} session(s), IDB ${r.idbCleared ? "✓" : "✗"}, Transformers ${r.transformersCleared ? "✓" : "✗"}, ${r.cachesCleared} CacheStorage`,
+                              );
+                            }}
+                          >
+                            Clear all model caches
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={async () => {
+                              if (!confirm("Hard reset: clear all model caches AND reload the page?")) return;
+                              const { clearOnnxCache } = await import("@/lib/onnx-loader");
+                              await clearOnnxCache();
+                              location.reload();
+                            }}
+                          >
+                            Hard reset & reload
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}
