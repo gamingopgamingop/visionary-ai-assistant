@@ -106,11 +106,10 @@ export async function nsfwCheck(base64: string, onProgress?: ProgressCb) {
 }
 
 /** Face detection — returns boxes. */
-export async function detectFaces(base64: string, onProgress?: ProgressCb) {
+export async function detectFaces(base64: string, threshold = 0.5, onProgress?: ProgressCb) {
   const pipe = await get("object-detection", "Xenova/yolos-tiny", true, onProgress);
   onProgress?.({ progress: 0.7, message: "Detecting…" });
-  const out = await pipe(base64, { threshold: 0.5 });
-  // Filter to face/person-like classes; fall back to all
+  const out = await pipe(base64, { threshold });
   const arr = Array.isArray(out) ? out : [out];
   return arr as { label: string; score: number; box: { xmin: number; ymin: number; xmax: number; ymax: number } }[];
 }
