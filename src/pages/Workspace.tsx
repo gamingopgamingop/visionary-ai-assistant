@@ -100,12 +100,43 @@ const Workspace = () => {
   const [gallery, setGallery] = usePersistedState<string[]>("ait_ws_sim_gallery", []);
   const [similarityRanked, setSimilarityRanked] = useState<{ url: string; sim: number }[]>([]);
   const [simSort, setSimSort] = usePersistedState<"desc" | "asc">("ait_ws_sim_sort", "desc");
+  // Imported lazily, but registry is small so we duplicate options here
   const FACE_MODELS = [
     { value: "Xenova/yolos-tiny", label: "YOLOS-tiny (general)" },
     { value: "Xenova/detr-resnet-50", label: "DETR ResNet-50 (accurate)" },
     { value: "Xenova/yolos-small", label: "YOLOS-small (balanced)" },
+    { value: "Xenova/owlvit-base-patch32", label: "OWL-ViT Base" },
+  ];
+  const DEPTH_MODELS = [
+    { value: "Xenova/depth-anything-small-hf", label: "Depth-Anything Small" },
+    { value: "Xenova/dpt-hybrid-midas", label: "DPT Hybrid MiDaS" },
+    { value: "onnx-community/depth-anything-v2-small", label: "Depth-Anything v2 Small" },
+  ];
+  const SUPERRES_MODELS = [
+    { value: "Xenova/swin2SR-classical-sr-x2-64", label: "Swin2SR Classical x2" },
+    { value: "Xenova/swin2SR-compressed-sr-x4-48", label: "Swin2SR Compressed x4" },
+    { value: "Xenova/swin2SR-lightweight-x2-64", label: "Swin2SR Lightweight x2" },
+  ];
+  const CAPTION_MODELS = [
+    { value: "Xenova/vit-gpt2-image-captioning", label: "ViT-GPT2" },
+    { value: "Xenova/blip-image-captioning-base", label: "BLIP Base" },
+    { value: "Xenova/blip-image-captioning-large", label: "BLIP Large" },
+  ];
+  const NSFW_MODELS = [
+    { value: "Xenova/nsfw-image-detection", label: "Falconsai NSFW" },
+    { value: "AdamCodd/vit-base-nsfw-detector", label: "ViT NSFW Detector" },
+  ];
+  const EMBED_MODELS = [
+    { value: "Xenova/clip-vit-base-patch32", label: "CLIP ViT-B/32" },
+    { value: "Xenova/clip-vit-base-patch16", label: "CLIP ViT-B/16" },
+    { value: "Xenova/siglip-base-patch16-224", label: "SigLIP Base" },
   ];
   const [faceModel, setFaceModel] = usePersistedState<string>("ait_ws_face_model", FACE_MODELS[0].value);
+  const [depthModel, setDepthModel] = usePersistedState<string>("ait_ws_depth_model", DEPTH_MODELS[0].value);
+  const [superresModel, setSuperresModel] = usePersistedState<string>("ait_ws_superres_model", SUPERRES_MODELS[0].value);
+  const [captionModel, setCaptionModel] = usePersistedState<string>("ait_ws_caption_model", CAPTION_MODELS[0].value);
+  const [nsfwModel, setNsfwModel] = usePersistedState<string>("ait_ws_nsfw_model", NSFW_MODELS[0].value);
+  const [embedModel, setEmbedModel] = usePersistedState<string>("ait_ws_embed_model", EMBED_MODELS[0].value);
   const [faceThresholds, setFaceThresholds] = usePersistedState<Record<string, number>>("ait_ws_face_thresh_v2", {});
   const faceThreshold = faceThresholds[faceModel] ?? 0.5;
   const setFaceThreshold = (v: number) => setFaceThresholds((m) => ({ ...m, [faceModel]: v }));
@@ -199,7 +230,7 @@ const Workspace = () => {
         const { estimateDepth } = await import("@/lib/extra-services");
         const out = await estimateDepth(image1, ({ progress, message }) => {
           setLoadingMsg(message); setLoadingProgress(progress);
-        });
+        }, depthModel);
         res = { type: "image", content: out, original: image1 };
       } else if (activeTab === "superres") {
         if (!image1) throw new Error("Upload an image first");
@@ -208,7 +239,7 @@ const Workspace = () => {
         const { superResolve } = await import("@/lib/extra-services");
         const out = await superResolve(image1, ({ progress, message }) => {
           setLoadingMsg(message); setLoadingProgress(progress);
-        });
+        }, superresModel);
         res = { type: "image", content: out, original: image1 };
       } else if (activeTab === "caption") {
         if (!image1) throw new Error("Upload an image first");
@@ -217,7 +248,7 @@ const Workspace = () => {
         const { captionImage } = await import("@/lib/extra-services");
         const text = await captionImage(image1, ({ progress, message }) => {
           setLoadingMsg(message); setLoadingProgress(progress);
-        });
+        }, captionModel);
         res = { type: "text", content: text };
       } else if (activeTab === "nsfw") {
         if (!image1) throw new Error("Upload an image first");
@@ -226,7 +257,7 @@ const Workspace = () => {
         const { nsfwCheck } = await import("@/lib/extra-services");
         const out = await nsfwCheck(image1, ({ progress, message }) => {
           setLoadingMsg(message); setLoadingProgress(progress);
-        });
+        }, nsfwModel);
         const text = out.map((o, i) => `${i + 1}. ${o.label} — ${(o.score * 100).toFixed(1)}%`).join("\n");
         res = { type: "text", content: `NSFW classification:\n${text}` };
       } else if (activeTab === "faces") {
@@ -266,13 +297,13 @@ const Workspace = () => {
         const a = await embedImage(image1, ({ progress, message }) => {
           setLoadingMsg(`Query: ${message}`);
           setLoadingProgress(progress / (targets.length + 1));
-        });
+        }, embedModel);
         const sims: { idx: number; sim: number }[] = [];
         for (let i = 0; i < targets.length; i++) {
           const b = await embedImage(targets[i], ({ progress, message }) => {
             setLoadingMsg(`Image ${i + 1}/${targets.length}: ${message}`);
             setLoadingProgress((1 + i + progress) / (targets.length + 1));
-          });
+          }, embedModel);
           sims.push({ idx: i, sim: cosineSimilarity(a, b) });
         }
         sims.sort((x, y) => simSort === "desc" ? y.sim - x.sim : x.sim - y.sim);
@@ -802,6 +833,31 @@ const Workspace = () => {
                       </div>
                     </div>
                   )}
+
+                  {(() => {
+                    const modelPickers: Record<string, { opts: { value: string; label: string }[]; value: string; set: (v: string) => void }> = {
+                      depth: { opts: DEPTH_MODELS, value: depthModel, set: setDepthModel },
+                      superres: { opts: SUPERRES_MODELS, value: superresModel, set: setSuperresModel },
+                      caption: { opts: CAPTION_MODELS, value: captionModel, set: setCaptionModel },
+                      nsfw: { opts: NSFW_MODELS, value: nsfwModel, set: setNsfwModel },
+                      similarity: { opts: EMBED_MODELS, value: embedModel, set: setEmbedModel },
+                    };
+                    const p = modelPickers[t.id];
+                    if (!p) return null;
+                    return (
+                      <div>
+                        <Label className="text-xs">Model</Label>
+                        <Select value={p.value} onValueChange={p.set}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {p.opts.map((o) => (
+                              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    );
+                  })()}
 
                   {t.id !== "settings" && (
                     <>

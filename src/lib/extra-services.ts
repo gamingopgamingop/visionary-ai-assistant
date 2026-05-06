@@ -35,21 +35,56 @@ function get(task: string, model: string, useWebGPU: boolean, onProgress?: Progr
   return p;
 }
 
+export const TRANSFORMER_MODELS = {
+  depth: [
+    { value: "Xenova/depth-anything-small-hf", label: "Depth-Anything Small" },
+    { value: "Xenova/dpt-hybrid-midas", label: "DPT Hybrid MiDaS" },
+    { value: "onnx-community/depth-anything-v2-small", label: "Depth-Anything v2 Small" },
+  ],
+  superres: [
+    { value: "Xenova/swin2SR-classical-sr-x2-64", label: "Swin2SR Classical x2" },
+    { value: "Xenova/swin2SR-compressed-sr-x4-48", label: "Swin2SR Compressed x4" },
+    { value: "Xenova/swin2SR-lightweight-x2-64", label: "Swin2SR Lightweight x2" },
+  ],
+  caption: [
+    { value: "Xenova/vit-gpt2-image-captioning", label: "ViT-GPT2 Captioning" },
+    { value: "Xenova/blip-image-captioning-base", label: "BLIP Base" },
+    { value: "Xenova/blip-image-captioning-large", label: "BLIP Large" },
+  ],
+  nsfw: [
+    { value: "Xenova/nsfw-image-detection", label: "Falconsai NSFW" },
+    { value: "AdamCodd/vit-base-nsfw-detector", label: "ViT NSFW Detector" },
+  ],
+  faces: [
+    { value: "Xenova/yolos-tiny", label: "YOLOS-tiny (general)" },
+    { value: "Xenova/detr-resnet-50", label: "DETR ResNet-50 (accurate)" },
+    { value: "Xenova/yolos-small", label: "YOLOS-small (balanced)" },
+    { value: "Xenova/owlvit-base-patch32", label: "OWL-ViT Base" },
+  ],
+  embed: [
+    { value: "Xenova/clip-vit-base-patch32", label: "CLIP ViT-B/32" },
+    { value: "Xenova/clip-vit-base-patch16", label: "CLIP ViT-B/16" },
+    { value: "Xenova/siglip-base-patch16-224", label: "SigLIP Base" },
+  ],
+} as const;
+
 /** Depth estimation — returns a grayscale depth map data URL. */
-export async function estimateDepth(base64: string, onProgress?: ProgressCb): Promise<string> {
-  const pipe = await get("depth-estimation", "Xenova/depth-anything-small-hf", true, onProgress);
+export async function estimateDepth(
+  base64: string,
+  onProgress?: ProgressCb,
+  model: string = TRANSFORMER_MODELS.depth[0].value,
+): Promise<string> {
+  const pipe = await get("depth-estimation", model, true, onProgress);
   onProgress?.({ progress: 0.7, message: "Estimating depth…" });
   const out = await pipe(base64);
   const depth = Array.isArray(out) ? out[0] : out;
   const map = depth?.depth ?? depth;
-  // Convert RawImage to canvas
   const canvas = document.createElement("canvas");
   canvas.width = map.width;
   canvas.height = map.height;
   const ctx = canvas.getContext("2d")!;
   const imageData = ctx.createImageData(map.width, map.height);
   const data = map.data as Uint8Array | Float32Array;
-  // Normalize to 0-255
   let min = Infinity, max = -Infinity;
   for (let i = 0; i < data.length; i++) { if (data[i] < min) min = data[i]; if (data[i] > max) max = data[i]; }
   const range = max - min || 1;
@@ -65,8 +100,12 @@ export async function estimateDepth(base64: string, onProgress?: ProgressCb): Pr
 }
 
 /** Image super-resolution — upscale ~2x. */
-export async function superResolve(base64: string, onProgress?: ProgressCb): Promise<string> {
-  const pipe = await get("image-to-image", "Xenova/swin2SR-classical-sr-x2-64", true, onProgress);
+export async function superResolve(
+  base64: string,
+  onProgress?: ProgressCb,
+  model: string = TRANSFORMER_MODELS.superres[0].value,
+): Promise<string> {
+  const pipe = await get("image-to-image", model, true, onProgress);
   onProgress?.({ progress: 0.7, message: "Upscaling…" });
   const out = await pipe(base64);
   const result = Array.isArray(out) ? out[0] : out;
@@ -76,7 +115,6 @@ export async function superResolve(base64: string, onProgress?: ProgressCb): Pro
   const ctx = canvas.getContext("2d")!;
   const imageData = ctx.createImageData(result.width, result.height);
   const src = result.data as Uint8Array;
-  // Result is RGB; convert to RGBA
   const channels = src.length / (result.width * result.height);
   for (let i = 0, j = 0; i < src.length; i += channels, j += 4) {
     imageData.data[j] = src[i];
@@ -89,8 +127,12 @@ export async function superResolve(base64: string, onProgress?: ProgressCb): Pro
 }
 
 /** Image captioning — returns a one-sentence description. */
-export async function captionImage(base64: string, onProgress?: ProgressCb): Promise<string> {
-  const pipe = await get("image-to-text", "Xenova/vit-gpt2-image-captioning", true, onProgress);
+export async function captionImage(
+  base64: string,
+  onProgress?: ProgressCb,
+  model: string = TRANSFORMER_MODELS.caption[0].value,
+): Promise<string> {
+  const pipe = await get("image-to-text", model, true, onProgress);
   onProgress?.({ progress: 0.7, message: "Generating caption…" });
   const out = await pipe(base64);
   const first = Array.isArray(out) ? out[0] : out;
@@ -98,8 +140,12 @@ export async function captionImage(base64: string, onProgress?: ProgressCb): Pro
 }
 
 /** NSFW classification — returns label + scores. */
-export async function nsfwCheck(base64: string, onProgress?: ProgressCb) {
-  const pipe = await get("image-classification", "Xenova/nsfw-image-detection", true, onProgress);
+export async function nsfwCheck(
+  base64: string,
+  onProgress?: ProgressCb,
+  model: string = TRANSFORMER_MODELS.nsfw[0].value,
+) {
+  const pipe = await get("image-classification", model, true, onProgress);
   onProgress?.({ progress: 0.7, message: "Classifying…" });
   const out = await pipe(base64, { topk: 5 });
   return out as { label: string; score: number }[];
@@ -109,7 +155,7 @@ export async function nsfwCheck(base64: string, onProgress?: ProgressCb) {
 export async function detectFaces(
   base64: string,
   threshold = 0.5,
-  model = "Xenova/yolos-tiny",
+  model: string = TRANSFORMER_MODELS.faces[0].value,
   onProgress?: ProgressCb,
 ) {
   const pipe = await get("object-detection", model, true, onProgress);
@@ -120,8 +166,12 @@ export async function detectFaces(
 }
 
 /** Image embedding — returns a Float32Array vector for similarity comparison. */
-export async function embedImage(base64: string, onProgress?: ProgressCb): Promise<Float32Array> {
-  const pipe = await get("image-feature-extraction", "Xenova/clip-vit-base-patch32", true, onProgress);
+export async function embedImage(
+  base64: string,
+  onProgress?: ProgressCb,
+  model: string = TRANSFORMER_MODELS.embed[0].value,
+): Promise<Float32Array> {
+  const pipe = await get("image-feature-extraction", model, true, onProgress);
   onProgress?.({ progress: 0.7, message: "Embedding…" });
   const out = await pipe(base64, { pooling: "mean", normalize: true });
   return out.data as Float32Array;
