@@ -7,7 +7,11 @@ export interface Box {
   box: { xmin: number; ymin: number; xmax: number; ymax: number };
 }
 
-export async function drawBoxesOnImage(base64: string, boxes: Box[]): Promise<string> {
+export async function drawBoxesOnImage(
+  base64: string,
+  boxes: Box[],
+  opts: { customLabels?: Record<number, string> } = {},
+): Promise<string> {
   const img = await new Promise<HTMLImageElement>((resolve, reject) => {
     const i = new Image();
     i.onload = () => resolve(i);
