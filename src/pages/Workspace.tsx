@@ -99,7 +99,19 @@ const Workspace = () => {
   });
   const [gallery, setGallery] = usePersistedState<string[]>("ait_ws_sim_gallery", []);
   const [similarityRanked, setSimilarityRanked] = useState<{ url: string; sim: number }[]>([]);
-  const [faceThreshold, setFaceThreshold] = usePersistedState<number>("ait_ws_face_thresh", 0.5);
+  const [simSort, setSimSort] = usePersistedState<"desc" | "asc">("ait_ws_sim_sort", "desc");
+  const FACE_MODELS = [
+    { value: "Xenova/yolos-tiny", label: "YOLOS-tiny (general)" },
+    { value: "Xenova/detr-resnet-50", label: "DETR ResNet-50 (accurate)" },
+    { value: "Xenova/yolos-small", label: "YOLOS-small (balanced)" },
+  ];
+  const [faceModel, setFaceModel] = usePersistedState<string>("ait_ws_face_model", FACE_MODELS[0].value);
+  const [faceThresholds, setFaceThresholds] = usePersistedState<Record<string, number>>("ait_ws_face_thresh_v2", {});
+  const faceThreshold = faceThresholds[faceModel] ?? 0.5;
+  const setFaceThreshold = (v: number) => setFaceThresholds((m) => ({ ...m, [faceModel]: v }));
+  const [faceBoxes, setFaceBoxes] = useState<any[]>([]);
+  const [faceLabels, setFaceLabels] = useState<Record<number, string>>({});
+  const [faceImageDims, setFaceImageDims] = useState<{ w: number; h: number } | null>(null);
 
   // Editor controls (persisted)
   const [editWidth, setEditWidth] = usePersistedState<string>("ait_ws_edit_w", "");
