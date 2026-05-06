@@ -72,7 +72,7 @@ export const TRANSFORMER_MODELS = {
 export async function estimateDepth(
   base64: string,
   onProgress?: ProgressCb,
-  model = TRANSFORMER_MODELS.depth[0].value,
+  model: string = TRANSFORMER_MODELS.depth[0].value,
 ): Promise<string> {
   const pipe = await get("depth-estimation", model, true, onProgress);
   onProgress?.({ progress: 0.7, message: "Estimating depth…" });
@@ -103,7 +103,7 @@ export async function estimateDepth(
 export async function superResolve(
   base64: string,
   onProgress?: ProgressCb,
-  model = TRANSFORMER_MODELS.superres[0].value,
+  model: string = TRANSFORMER_MODELS.superres[0].value,
 ): Promise<string> {
   const pipe = await get("image-to-image", model, true, onProgress);
   onProgress?.({ progress: 0.7, message: "Upscaling…" });
@@ -130,7 +130,7 @@ export async function superResolve(
 export async function captionImage(
   base64: string,
   onProgress?: ProgressCb,
-  model = TRANSFORMER_MODELS.caption[0].value,
+  model: string = TRANSFORMER_MODELS.caption[0].value,
 ): Promise<string> {
   const pipe = await get("image-to-text", model, true, onProgress);
   onProgress?.({ progress: 0.7, message: "Generating caption…" });
@@ -143,7 +143,7 @@ export async function captionImage(
 export async function nsfwCheck(
   base64: string,
   onProgress?: ProgressCb,
-  model = TRANSFORMER_MODELS.nsfw[0].value,
+  model: string = TRANSFORMER_MODELS.nsfw[0].value,
 ) {
   const pipe = await get("image-classification", model, true, onProgress);
   onProgress?.({ progress: 0.7, message: "Classifying…" });
@@ -155,7 +155,7 @@ export async function nsfwCheck(
 export async function detectFaces(
   base64: string,
   threshold = 0.5,
-  model = TRANSFORMER_MODELS.faces[0].value,
+  model: string = TRANSFORMER_MODELS.faces[0].value,
   onProgress?: ProgressCb,
 ) {
   const pipe = await get("object-detection", model, true, onProgress);
@@ -169,7 +169,7 @@ export async function detectFaces(
 export async function embedImage(
   base64: string,
   onProgress?: ProgressCb,
-  model = TRANSFORMER_MODELS.embed[0].value,
+  model: string = TRANSFORMER_MODELS.embed[0].value,
 ): Promise<Float32Array> {
   const pipe = await get("image-feature-extraction", model, true, onProgress);
   onProgress?.({ progress: 0.7, message: "Embedding…" });
