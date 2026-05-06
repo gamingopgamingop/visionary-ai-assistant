@@ -834,6 +834,31 @@ const Workspace = () => {
                     </div>
                   )}
 
+                  {(() => {
+                    const modelPickers: Record<string, { opts: { value: string; label: string }[]; value: string; set: (v: string) => void }> = {
+                      depth: { opts: DEPTH_MODELS, value: depthModel, set: setDepthModel },
+                      superres: { opts: SUPERRES_MODELS, value: superresModel, set: setSuperresModel },
+                      caption: { opts: CAPTION_MODELS, value: captionModel, set: setCaptionModel },
+                      nsfw: { opts: NSFW_MODELS, value: nsfwModel, set: setNsfwModel },
+                      similarity: { opts: EMBED_MODELS, value: embedModel, set: setEmbedModel },
+                    };
+                    const p = modelPickers[t.id];
+                    if (!p) return null;
+                    return (
+                      <div>
+                        <Label className="text-xs">Model</Label>
+                        <Select value={p.value} onValueChange={p.set}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {p.opts.map((o) => (
+                              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    );
+                  })()}
+
                   {t.id !== "settings" && (
                     <>
                       <Button
