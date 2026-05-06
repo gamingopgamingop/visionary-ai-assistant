@@ -230,7 +230,7 @@ const Workspace = () => {
         const { estimateDepth } = await import("@/lib/extra-services");
         const out = await estimateDepth(image1, ({ progress, message }) => {
           setLoadingMsg(message); setLoadingProgress(progress);
-        });
+        }, depthModel);
         res = { type: "image", content: out, original: image1 };
       } else if (activeTab === "superres") {
         if (!image1) throw new Error("Upload an image first");
@@ -239,7 +239,7 @@ const Workspace = () => {
         const { superResolve } = await import("@/lib/extra-services");
         const out = await superResolve(image1, ({ progress, message }) => {
           setLoadingMsg(message); setLoadingProgress(progress);
-        });
+        }, superresModel);
         res = { type: "image", content: out, original: image1 };
       } else if (activeTab === "caption") {
         if (!image1) throw new Error("Upload an image first");
@@ -248,7 +248,7 @@ const Workspace = () => {
         const { captionImage } = await import("@/lib/extra-services");
         const text = await captionImage(image1, ({ progress, message }) => {
           setLoadingMsg(message); setLoadingProgress(progress);
-        });
+        }, captionModel);
         res = { type: "text", content: text };
       } else if (activeTab === "nsfw") {
         if (!image1) throw new Error("Upload an image first");
@@ -257,7 +257,7 @@ const Workspace = () => {
         const { nsfwCheck } = await import("@/lib/extra-services");
         const out = await nsfwCheck(image1, ({ progress, message }) => {
           setLoadingMsg(message); setLoadingProgress(progress);
-        });
+        }, nsfwModel);
         const text = out.map((o, i) => `${i + 1}. ${o.label} — ${(o.score * 100).toFixed(1)}%`).join("\n");
         res = { type: "text", content: `NSFW classification:\n${text}` };
       } else if (activeTab === "faces") {
