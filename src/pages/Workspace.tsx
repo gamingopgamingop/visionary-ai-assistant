@@ -297,13 +297,13 @@ const Workspace = () => {
         const a = await embedImage(image1, ({ progress, message }) => {
           setLoadingMsg(`Query: ${message}`);
           setLoadingProgress(progress / (targets.length + 1));
-        });
+        }, embedModel);
         const sims: { idx: number; sim: number }[] = [];
         for (let i = 0; i < targets.length; i++) {
           const b = await embedImage(targets[i], ({ progress, message }) => {
             setLoadingMsg(`Image ${i + 1}/${targets.length}: ${message}`);
             setLoadingProgress((1 + i + progress) / (targets.length + 1));
-          });
+          }, embedModel);
           sims.push({ idx: i, sim: cosineSimilarity(a, b) });
         }
         sims.sort((x, y) => simSort === "desc" ? y.sim - x.sim : x.sim - y.sim);
