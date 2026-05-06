@@ -30,14 +30,16 @@ export async function drawBoxesOnImage(
   ctx.font = `${fontSize}px sans-serif`;
   ctx.textBaseline = "top";
 
-  for (const b of boxes) {
+  for (let bi = 0; bi < boxes.length; bi++) {
+    const b = boxes[bi];
     const { xmin, ymin, xmax, ymax } = b.box;
     const w = xmax - xmin;
     const h = ymax - ymin;
     ctx.strokeStyle = "#22d3ee";
     ctx.strokeRect(xmin, ymin, w, h);
 
-    const text = `${b.label} ${(b.score * 100).toFixed(0)}%`;
+    const labelName = opts.customLabels?.[bi] ?? b.label;
+    const text = `${bi + 1}. ${labelName} ${(b.score * 100).toFixed(0)}%`;
     const tw = ctx.measureText(text).width + 8;
     const th = fontSize + 6;
     ctx.fillStyle = "rgba(34, 211, 238, 0.9)";
