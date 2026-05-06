@@ -100,12 +100,43 @@ const Workspace = () => {
   const [gallery, setGallery] = usePersistedState<string[]>("ait_ws_sim_gallery", []);
   const [similarityRanked, setSimilarityRanked] = useState<{ url: string; sim: number }[]>([]);
   const [simSort, setSimSort] = usePersistedState<"desc" | "asc">("ait_ws_sim_sort", "desc");
+  // Imported lazily, but registry is small so we duplicate options here
   const FACE_MODELS = [
     { value: "Xenova/yolos-tiny", label: "YOLOS-tiny (general)" },
     { value: "Xenova/detr-resnet-50", label: "DETR ResNet-50 (accurate)" },
     { value: "Xenova/yolos-small", label: "YOLOS-small (balanced)" },
+    { value: "Xenova/owlvit-base-patch32", label: "OWL-ViT Base" },
+  ];
+  const DEPTH_MODELS = [
+    { value: "Xenova/depth-anything-small-hf", label: "Depth-Anything Small" },
+    { value: "Xenova/dpt-hybrid-midas", label: "DPT Hybrid MiDaS" },
+    { value: "onnx-community/depth-anything-v2-small", label: "Depth-Anything v2 Small" },
+  ];
+  const SUPERRES_MODELS = [
+    { value: "Xenova/swin2SR-classical-sr-x2-64", label: "Swin2SR Classical x2" },
+    { value: "Xenova/swin2SR-compressed-sr-x4-48", label: "Swin2SR Compressed x4" },
+    { value: "Xenova/swin2SR-lightweight-x2-64", label: "Swin2SR Lightweight x2" },
+  ];
+  const CAPTION_MODELS = [
+    { value: "Xenova/vit-gpt2-image-captioning", label: "ViT-GPT2" },
+    { value: "Xenova/blip-image-captioning-base", label: "BLIP Base" },
+    { value: "Xenova/blip-image-captioning-large", label: "BLIP Large" },
+  ];
+  const NSFW_MODELS = [
+    { value: "Xenova/nsfw-image-detection", label: "Falconsai NSFW" },
+    { value: "AdamCodd/vit-base-nsfw-detector", label: "ViT NSFW Detector" },
+  ];
+  const EMBED_MODELS = [
+    { value: "Xenova/clip-vit-base-patch32", label: "CLIP ViT-B/32" },
+    { value: "Xenova/clip-vit-base-patch16", label: "CLIP ViT-B/16" },
+    { value: "Xenova/siglip-base-patch16-224", label: "SigLIP Base" },
   ];
   const [faceModel, setFaceModel] = usePersistedState<string>("ait_ws_face_model", FACE_MODELS[0].value);
+  const [depthModel, setDepthModel] = usePersistedState<string>("ait_ws_depth_model", DEPTH_MODELS[0].value);
+  const [superresModel, setSuperresModel] = usePersistedState<string>("ait_ws_superres_model", SUPERRES_MODELS[0].value);
+  const [captionModel, setCaptionModel] = usePersistedState<string>("ait_ws_caption_model", CAPTION_MODELS[0].value);
+  const [nsfwModel, setNsfwModel] = usePersistedState<string>("ait_ws_nsfw_model", NSFW_MODELS[0].value);
+  const [embedModel, setEmbedModel] = usePersistedState<string>("ait_ws_embed_model", EMBED_MODELS[0].value);
   const [faceThresholds, setFaceThresholds] = usePersistedState<Record<string, number>>("ait_ws_face_thresh_v2", {});
   const faceThreshold = faceThresholds[faceModel] ?? 0.5;
   const setFaceThreshold = (v: number) => setFaceThresholds((m) => ({ ...m, [faceModel]: v }));
