@@ -275,7 +275,7 @@ const Workspace = () => {
           });
           sims.push({ idx: i, sim: cosineSimilarity(a, b) });
         }
-        sims.sort((x, y) => y.sim - x.sim);
+        sims.sort((x, y) => simSort === "desc" ? y.sim - x.sim : x.sim - y.sim);
         const text = sims
           .map((s, rank) => `#${rank + 1} — image ${s.idx + 1}: ${(s.sim * 100).toFixed(2)}%`)
           .join("\n");
