@@ -235,9 +235,18 @@ const Workspace = () => {
         setLoadingProgress(0);
         const { detectFaces } = await import("@/lib/extra-services");
         const { drawBoxesOnImage } = await import("@/lib/draw-boxes");
-        const out = await detectFaces(image1, faceThreshold, ({ progress, message }) => {
+        const out = await detectFaces(image1, faceThreshold, faceModel, ({ progress, message }) => {
           setLoadingMsg(message); setLoadingProgress(progress);
         });
+        // Capture original image dims for metadata
+        const dims = await new Promise<{ w: number; h: number }>((resolve) => {
+          const im = new Image();
+          im.onload = () => resolve({ w: im.naturalWidth, h: im.naturalHeight });
+          im.src = image1;
+        });
+        setFaceImageDims(dims);
+        setFaceBoxes(out);
+        setFaceLabels({});
         if (!out.length) {
           res = { type: "text", content: "No detections above threshold." };
         } else {
@@ -245,7 +254,6 @@ const Workspace = () => {
           const summary = out.map((o, i) => `${i + 1}. ${o.label} — ${(o.score * 100).toFixed(0)}%`).join("\n");
           toast.success(`Detected ${out.length} object(s)`);
           res = { type: "image", content: annotated, original: image1 };
-          // Stash the summary in history as a side note via prompt-less text
           await saveToHistory("faces", "Faces", { type: "text", content: summary });
         }
       } else if (activeTab === "similarity") {
