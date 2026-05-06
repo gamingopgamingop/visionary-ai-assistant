@@ -637,7 +637,45 @@ const Workspace = () => {
                       )}
                       {similarityRanked.length > 0 && (
                         <div className="space-y-2">
-                          <p className="text-xs font-medium">Ranked results</p>
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <p className="text-xs font-medium">Ranked results ({similarityRanked.length})</p>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 text-xs"
+                                onClick={() => {
+                                  const next = simSort === "desc" ? "asc" : "desc";
+                                  setSimSort(next);
+                                  setSimilarityRanked((r) => [...r].sort((a, b) => next === "desc" ? b.sim - a.sim : a.sim - b.sim));
+                                }}
+                              >
+                                Sort: {simSort === "desc" ? "High → Low" : "Low → High"}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 text-xs"
+                                onClick={async () => {
+                                  const { similarityToJSON, downloadText } = await import("@/lib/face-export");
+                                  downloadText(`similarity-${Date.now()}.json`, similarityToJSON(similarityRanked), "application/json");
+                                }}
+                              >
+                                JSON
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 text-xs"
+                                onClick={async () => {
+                                  const { similarityToCSV, downloadText } = await import("@/lib/face-export");
+                                  downloadText(`similarity-${Date.now()}.csv`, similarityToCSV(similarityRanked), "text/csv");
+                                }}
+                              >
+                                CSV
+                              </Button>
+                            </div>
+                          </div>
                           <div className="grid grid-cols-3 gap-2">
                             {similarityRanked.map((r, i) => (
                               <div key={i} className="space-y-1">
