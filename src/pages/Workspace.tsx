@@ -483,21 +483,96 @@ const Workspace = () => {
                   )}
 
                   {t.id === "faces" && (
-                    <div className="space-y-2 rounded-md border p-3 bg-muted/30">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs">Confidence threshold</Label>
-                        <span className="text-xs font-mono text-muted-foreground">{(faceThreshold * 100).toFixed(0)}%</span>
+                    <div className="space-y-3 rounded-md border p-3 bg-muted/30">
+                      <div>
+                        <Label className="text-xs">Detector model</Label>
+                        <Select value={faceModel} onValueChange={(v) => setFaceModel(v)}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {FACE_MODELS.map((m) => (
+                              <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <Slider
-                        value={[faceThreshold * 100]}
-                        min={10}
-                        max={95}
-                        step={1}
-                        onValueChange={([v]) => setFaceThreshold(v / 100)}
-                      />
-                      <p className="text-[11px] text-muted-foreground">
-                        Lower = more detections. Result image is annotated and downloadable via the Export menu.
-                      </p>
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs">Confidence threshold</Label>
+                          <span className="text-xs font-mono text-muted-foreground">{(faceThreshold * 100).toFixed(0)}%</span>
+                        </div>
+                        <Slider
+                          value={[faceThreshold * 100]}
+                          min={10}
+                          max={95}
+                          step={1}
+                          onValueChange={([v]) => setFaceThreshold(v / 100)}
+                          className="mt-2"
+                        />
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Threshold persists per model. Lower = more detections.
+                        </p>
+                      </div>
+                      {faceBoxes.length > 0 && (
+                        <div className="space-y-2 border-t pt-3">
+                          <Label className="text-xs">Label detections</Label>
+                          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                            {faceBoxes.map((b, i) => (
+                              <div key={i} className="flex items-center gap-2">
+                                <span className="text-[11px] font-mono w-16 text-muted-foreground shrink-0">
+                                  #{i + 1} {(b.score * 100).toFixed(0)}%
+                                </span>
+                                <Input
+                                  value={faceLabels[i] ?? ""}
+                                  placeholder={b.label}
+                                  onChange={(e) => setFaceLabels((m) => ({ ...m, [i]: e.target.value }))}
+                                  className="h-7 text-xs"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                if (!image1) return;
+                                const { drawBoxesOnImage } = await import("@/lib/draw-boxes");
+                                const annotated = await drawBoxesOnImage(image1, faceBoxes, { customLabels: faceLabels });
+                                setResult({ type: "image", content: annotated, original: image1 });
+                                toast.success("Re-annotated with custom labels");
+                              }}
+                            >
+                              Re-render labels
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                const { facesToJSON, downloadText } = await import("@/lib/face-export");
+                                const json = facesToJSON(faceBoxes, faceLabels, {
+                                  model: faceModel,
+                                  threshold: faceThreshold,
+                                  imageWidth: faceImageDims?.w,
+                                  imageHeight: faceImageDims?.h,
+                                });
+                                downloadText(`faces-${Date.now()}.json`, json, "application/json");
+                              }}
+                            >
+                              Export JSON
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                const { facesToCSV, downloadText } = await import("@/lib/face-export");
+                                downloadText(`faces-${Date.now()}.csv`, facesToCSV(faceBoxes, faceLabels), "text/csv");
+                              }}
+                            >
+                              Export CSV
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
