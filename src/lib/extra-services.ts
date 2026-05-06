@@ -105,9 +105,14 @@ export async function nsfwCheck(base64: string, onProgress?: ProgressCb) {
   return out as { label: string; score: number }[];
 }
 
-/** Face detection — returns boxes. */
-export async function detectFaces(base64: string, threshold = 0.5, onProgress?: ProgressCb) {
-  const pipe = await get("object-detection", "Xenova/yolos-tiny", true, onProgress);
+/** Face / object detection — returns boxes. */
+export async function detectFaces(
+  base64: string,
+  threshold = 0.5,
+  model = "Xenova/yolos-tiny",
+  onProgress?: ProgressCb,
+) {
+  const pipe = await get("object-detection", model, true, onProgress);
   onProgress?.({ progress: 0.7, message: "Detecting…" });
   const out = await pipe(base64, { threshold });
   const arr = Array.isArray(out) ? out : [out];
