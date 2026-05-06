@@ -99,7 +99,19 @@ const Workspace = () => {
   });
   const [gallery, setGallery] = usePersistedState<string[]>("ait_ws_sim_gallery", []);
   const [similarityRanked, setSimilarityRanked] = useState<{ url: string; sim: number }[]>([]);
-  const [faceThreshold, setFaceThreshold] = usePersistedState<number>("ait_ws_face_thresh", 0.5);
+  const [simSort, setSimSort] = usePersistedState<"desc" | "asc">("ait_ws_sim_sort", "desc");
+  const FACE_MODELS = [
+    { value: "Xenova/yolos-tiny", label: "YOLOS-tiny (general)" },
+    { value: "Xenova/detr-resnet-50", label: "DETR ResNet-50 (accurate)" },
+    { value: "Xenova/yolos-small", label: "YOLOS-small (balanced)" },
+  ];
+  const [faceModel, setFaceModel] = usePersistedState<string>("ait_ws_face_model", FACE_MODELS[0].value);
+  const [faceThresholds, setFaceThresholds] = usePersistedState<Record<string, number>>("ait_ws_face_thresh_v2", {});
+  const faceThreshold = faceThresholds[faceModel] ?? 0.5;
+  const setFaceThreshold = (v: number) => setFaceThresholds((m) => ({ ...m, [faceModel]: v }));
+  const [faceBoxes, setFaceBoxes] = useState<any[]>([]);
+  const [faceLabels, setFaceLabels] = useState<Record<number, string>>({});
+  const [faceImageDims, setFaceImageDims] = useState<{ w: number; h: number } | null>(null);
 
   // Editor controls (persisted)
   const [editWidth, setEditWidth] = usePersistedState<string>("ait_ws_edit_w", "");
@@ -223,9 +235,18 @@ const Workspace = () => {
         setLoadingProgress(0);
         const { detectFaces } = await import("@/lib/extra-services");
         const { drawBoxesOnImage } = await import("@/lib/draw-boxes");
-        const out = await detectFaces(image1, faceThreshold, ({ progress, message }) => {
+        const out = await detectFaces(image1, faceThreshold, faceModel, ({ progress, message }) => {
           setLoadingMsg(message); setLoadingProgress(progress);
         });
+        // Capture original image dims for metadata
+        const dims = await new Promise<{ w: number; h: number }>((resolve) => {
+          const im = new Image();
+          im.onload = () => resolve({ w: im.naturalWidth, h: im.naturalHeight });
+          im.src = image1;
+        });
+        setFaceImageDims(dims);
+        setFaceBoxes(out);
+        setFaceLabels({});
         if (!out.length) {
           res = { type: "text", content: "No detections above threshold." };
         } else {
@@ -233,7 +254,6 @@ const Workspace = () => {
           const summary = out.map((o, i) => `${i + 1}. ${o.label} — ${(o.score * 100).toFixed(0)}%`).join("\n");
           toast.success(`Detected ${out.length} object(s)`);
           res = { type: "image", content: annotated, original: image1 };
-          // Stash the summary in history as a side note via prompt-less text
           await saveToHistory("faces", "Faces", { type: "text", content: summary });
         }
       } else if (activeTab === "similarity") {
@@ -255,7 +275,7 @@ const Workspace = () => {
           });
           sims.push({ idx: i, sim: cosineSimilarity(a, b) });
         }
-        sims.sort((x, y) => y.sim - x.sim);
+        sims.sort((x, y) => simSort === "desc" ? y.sim - x.sim : x.sim - y.sim);
         const text = sims
           .map((s, rank) => `#${rank + 1} — image ${s.idx + 1}: ${(s.sim * 100).toFixed(2)}%`)
           .join("\n");
@@ -463,21 +483,96 @@ const Workspace = () => {
                   )}
 
                   {t.id === "faces" && (
-                    <div className="space-y-2 rounded-md border p-3 bg-muted/30">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs">Confidence threshold</Label>
-                        <span className="text-xs font-mono text-muted-foreground">{(faceThreshold * 100).toFixed(0)}%</span>
+                    <div className="space-y-3 rounded-md border p-3 bg-muted/30">
+                      <div>
+                        <Label className="text-xs">Detector model</Label>
+                        <Select value={faceModel} onValueChange={(v) => setFaceModel(v)}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {FACE_MODELS.map((m) => (
+                              <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <Slider
-                        value={[faceThreshold * 100]}
-                        min={10}
-                        max={95}
-                        step={1}
-                        onValueChange={([v]) => setFaceThreshold(v / 100)}
-                      />
-                      <p className="text-[11px] text-muted-foreground">
-                        Lower = more detections. Result image is annotated and downloadable via the Export menu.
-                      </p>
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs">Confidence threshold</Label>
+                          <span className="text-xs font-mono text-muted-foreground">{(faceThreshold * 100).toFixed(0)}%</span>
+                        </div>
+                        <Slider
+                          value={[faceThreshold * 100]}
+                          min={10}
+                          max={95}
+                          step={1}
+                          onValueChange={([v]) => setFaceThreshold(v / 100)}
+                          className="mt-2"
+                        />
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Threshold persists per model. Lower = more detections.
+                        </p>
+                      </div>
+                      {faceBoxes.length > 0 && (
+                        <div className="space-y-2 border-t pt-3">
+                          <Label className="text-xs">Label detections</Label>
+                          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                            {faceBoxes.map((b, i) => (
+                              <div key={i} className="flex items-center gap-2">
+                                <span className="text-[11px] font-mono w-16 text-muted-foreground shrink-0">
+                                  #{i + 1} {(b.score * 100).toFixed(0)}%
+                                </span>
+                                <Input
+                                  value={faceLabels[i] ?? ""}
+                                  placeholder={b.label}
+                                  onChange={(e) => setFaceLabels((m) => ({ ...m, [i]: e.target.value }))}
+                                  className="h-7 text-xs"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                if (!image1) return;
+                                const { drawBoxesOnImage } = await import("@/lib/draw-boxes");
+                                const annotated = await drawBoxesOnImage(image1, faceBoxes, { customLabels: faceLabels });
+                                setResult({ type: "image", content: annotated, original: image1 });
+                                toast.success("Re-annotated with custom labels");
+                              }}
+                            >
+                              Re-render labels
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                const { facesToJSON, downloadText } = await import("@/lib/face-export");
+                                const json = facesToJSON(faceBoxes, faceLabels, {
+                                  model: faceModel,
+                                  threshold: faceThreshold,
+                                  imageWidth: faceImageDims?.w,
+                                  imageHeight: faceImageDims?.h,
+                                });
+                                downloadText(`faces-${Date.now()}.json`, json, "application/json");
+                              }}
+                            >
+                              Export JSON
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                const { facesToCSV, downloadText } = await import("@/lib/face-export");
+                                downloadText(`faces-${Date.now()}.csv`, facesToCSV(faceBoxes, faceLabels), "text/csv");
+                              }}
+                            >
+                              Export CSV
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -542,7 +637,45 @@ const Workspace = () => {
                       )}
                       {similarityRanked.length > 0 && (
                         <div className="space-y-2">
-                          <p className="text-xs font-medium">Ranked results</p>
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <p className="text-xs font-medium">Ranked results ({similarityRanked.length})</p>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 text-xs"
+                                onClick={() => {
+                                  const next = simSort === "desc" ? "asc" : "desc";
+                                  setSimSort(next);
+                                  setSimilarityRanked((r) => [...r].sort((a, b) => next === "desc" ? b.sim - a.sim : a.sim - b.sim));
+                                }}
+                              >
+                                Sort: {simSort === "desc" ? "High → Low" : "Low → High"}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 text-xs"
+                                onClick={async () => {
+                                  const { similarityToJSON, downloadText } = await import("@/lib/face-export");
+                                  downloadText(`similarity-${Date.now()}.json`, similarityToJSON(similarityRanked), "application/json");
+                                }}
+                              >
+                                JSON
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 text-xs"
+                                onClick={async () => {
+                                  const { similarityToCSV, downloadText } = await import("@/lib/face-export");
+                                  downloadText(`similarity-${Date.now()}.csv`, similarityToCSV(similarityRanked), "text/csv");
+                                }}
+                              >
+                                CSV
+                              </Button>
+                            </div>
+                          </div>
                           <div className="grid grid-cols-3 gap-2">
                             {similarityRanked.map((r, i) => (
                               <div key={i} className="space-y-1">
