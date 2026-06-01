@@ -364,6 +364,49 @@ const Workspace = () => {
         });
         toast.success("Image processed");
         res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "adjust") {
+        if (!image1) throw new Error("Upload an image first");
+        const { applyAdjust } = await import("@/lib/image-tools");
+        const out = await applyAdjust(image1, {
+          brightness: adjBright, contrast: adjContrast, saturation: adjSat,
+          hue: adjHue, blur: adjBlur, sharpness: adjSharp,
+        });
+        res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "filters") {
+        if (!image1) throw new Error("Upload an image first");
+        const { applyFilter } = await import("@/lib/image-tools");
+        const out = await applyFilter(image1, filterPreset as any);
+        res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "histogram") {
+        if (!image1) throw new Error("Upload an image first");
+        const { renderHistogram } = await import("@/lib/image-tools");
+        const { dataUrl } = await renderHistogram(image1);
+        res = { type: "image", content: dataUrl, original: image1 };
+      } else if (activeTab === "convert") {
+        if (!image1) throw new Error("Upload an image first");
+        const { convertImage, compressToSize } = await import("@/lib/image-tools");
+        const target = parseInt(convTarget);
+        const r = target > 0
+          ? await compressToSize(image1, target * 1024, convFormat === "image/png" ? "image/jpeg" : convFormat)
+          : await convertImage(image1, convFormat, convQuality);
+        toast.success(`Output: ${(r.bytes / 1024).toFixed(1)} KB`);
+        res = { type: "image", content: r.dataUrl, original: image1 };
+      } else if (activeTab === "redact") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Detecting regions…");
+        const { detectFaces } = await import("@/lib/extra-services");
+        const { redactRegions } = await import("@/lib/image-tools");
+        const boxes = await detectFaces(image1, 0.4, faceModel, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        });
+        if (!boxes.length) throw new Error("No regions detected — try Faces tab with lower threshold");
+        const regions = boxes.map((b: any) => ({
+          x: b.box.xmin, y: b.box.ymin,
+          w: b.box.xmax - b.box.xmin, h: b.box.ymax - b.box.ymin,
+        }));
+        const out = await redactRegions(image1, regions, redactMode);
+        toast.success(`Redacted ${regions.length} region(s)`);
+        res = { type: "image", content: out, original: image1 };
       } else {
         // Server-side AI
         const body: Record<string, unknown> = { action: activeTab };
