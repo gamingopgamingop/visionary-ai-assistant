@@ -158,6 +158,19 @@ const Workspace = () => {
   const [editFormat, setEditFormat] = usePersistedState<ImageFormat>("ait_ws_edit_fmt", "image/png");
   const [editQuality, setEditQuality] = usePersistedState<string>("ait_ws_edit_q", "0.9");
 
+  // Adjust / Filters / Convert / Redact (persisted)
+  const [adjBright, setAdjBright] = usePersistedState<number>("ait_ws_adj_b", 0);
+  const [adjContrast, setAdjContrast] = usePersistedState<number>("ait_ws_adj_c", 0);
+  const [adjSat, setAdjSat] = usePersistedState<number>("ait_ws_adj_s", 0);
+  const [adjHue, setAdjHue] = usePersistedState<number>("ait_ws_adj_h", 0);
+  const [adjBlur, setAdjBlur] = usePersistedState<number>("ait_ws_adj_bl", 0);
+  const [adjSharp, setAdjSharp] = usePersistedState<number>("ait_ws_adj_sh", 0);
+  const [filterPreset, setFilterPreset] = usePersistedState<string>("ait_ws_filter", "vintage");
+  const [convFormat, setConvFormat] = usePersistedState<"image/png" | "image/jpeg" | "image/webp">("ait_ws_conv_f", "image/webp");
+  const [convQuality, setConvQuality] = usePersistedState<number>("ait_ws_conv_q", 0.85);
+  const [convTarget, setConvTarget] = usePersistedState<string>("ait_ws_conv_t", "");
+  const [redactMode, setRedactMode] = usePersistedState<"black" | "blur" | "pixelate">("ait_ws_red_m", "black");
+
   const currentTab = tabs.find((t) => t.id === activeTab)!;
 
   const fileToBase64 = (file: File): Promise<string> =>
