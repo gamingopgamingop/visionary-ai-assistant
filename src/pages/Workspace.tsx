@@ -63,6 +63,11 @@ const tabs: {
   { id: "wasm", label: "WASM FX", icon: Zap, needsImage: true },
   { id: "onnx", label: "ONNX AI", icon: Cpu, needsImage: true },
   { id: "editor", label: "Editor", icon: Crop, needsImage: true },
+  { id: "adjust", label: "Adjust", icon: SlidersHorizontal, needsImage: true },
+  { id: "filters", label: "Filters", icon: Filter, needsImage: true },
+  { id: "histogram", label: "Histogram", icon: BarChart3, needsImage: true },
+  { id: "convert", label: "Convert", icon: FileImage, needsImage: true },
+  { id: "redact", label: "Redact", icon: EyeOff, needsImage: true },
   { id: "settings", label: "Settings", icon: SettingsIcon, needsImage: false },
 ];
 
