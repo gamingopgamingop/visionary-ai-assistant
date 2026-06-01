@@ -29,12 +29,14 @@ import {
   Eye, ScanSearch, FileText, GitCompare, Sparkles, Eraser, Palette, Wand2, Cpu, Zap,
   Scissors, Droplet, MessageSquareQuote, Crop, Mountain, Maximize2, Smile, ShieldAlert,
   Type, Layers, Settings as SettingsIcon,
+  SlidersHorizontal, Filter, BarChart3, FileImage, EyeOff,
 } from "lucide-react";
 
 type TabId =
   | "analyze" | "detect" | "ocr" | "compare" | "enhance" | "inpaint" | "style" | "generate"
   | "wasm" | "onnx" | "bgRemove" | "palette" | "imageToPrompt" | "editor"
-  | "depth" | "superres" | "caption" | "nsfw" | "faces" | "similarity" | "settings";
+  | "depth" | "superres" | "caption" | "nsfw" | "faces" | "similarity"
+  | "adjust" | "filters" | "histogram" | "convert" | "redact" | "settings";
 
 const tabs: {
   id: TabId; label: string; icon: React.ElementType;
@@ -61,6 +63,11 @@ const tabs: {
   { id: "wasm", label: "WASM FX", icon: Zap, needsImage: true },
   { id: "onnx", label: "ONNX AI", icon: Cpu, needsImage: true },
   { id: "editor", label: "Editor", icon: Crop, needsImage: true },
+  { id: "adjust", label: "Adjust", icon: SlidersHorizontal, needsImage: true },
+  { id: "filters", label: "Filters", icon: Filter, needsImage: true },
+  { id: "histogram", label: "Histogram", icon: BarChart3, needsImage: true },
+  { id: "convert", label: "Convert", icon: FileImage, needsImage: true },
+  { id: "redact", label: "Redact", icon: EyeOff, needsImage: true },
   { id: "settings", label: "Settings", icon: SettingsIcon, needsImage: false },
 ];
 
@@ -150,6 +157,19 @@ const Workspace = () => {
   const [editRotate, setEditRotate] = usePersistedState<"0" | "90" | "180" | "270">("ait_ws_edit_rot", "0");
   const [editFormat, setEditFormat] = usePersistedState<ImageFormat>("ait_ws_edit_fmt", "image/png");
   const [editQuality, setEditQuality] = usePersistedState<string>("ait_ws_edit_q", "0.9");
+
+  // Adjust / Filters / Convert / Redact (persisted)
+  const [adjBright, setAdjBright] = usePersistedState<number>("ait_ws_adj_b", 0);
+  const [adjContrast, setAdjContrast] = usePersistedState<number>("ait_ws_adj_c", 0);
+  const [adjSat, setAdjSat] = usePersistedState<number>("ait_ws_adj_s", 0);
+  const [adjHue, setAdjHue] = usePersistedState<number>("ait_ws_adj_h", 0);
+  const [adjBlur, setAdjBlur] = usePersistedState<number>("ait_ws_adj_bl", 0);
+  const [adjSharp, setAdjSharp] = usePersistedState<number>("ait_ws_adj_sh", 0);
+  const [filterPreset, setFilterPreset] = usePersistedState<string>("ait_ws_filter", "vintage");
+  const [convFormat, setConvFormat] = usePersistedState<"image/png" | "image/jpeg" | "image/webp">("ait_ws_conv_f", "image/webp");
+  const [convQuality, setConvQuality] = usePersistedState<number>("ait_ws_conv_q", 0.85);
+  const [convTarget, setConvTarget] = usePersistedState<string>("ait_ws_conv_t", "");
+  const [redactMode, setRedactMode] = usePersistedState<"black" | "blur" | "pixelate">("ait_ws_red_m", "black");
 
   const currentTab = tabs.find((t) => t.id === activeTab)!;
 
@@ -343,6 +363,49 @@ const Workspace = () => {
           quality: parseFloat(editQuality),
         });
         toast.success("Image processed");
+        res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "adjust") {
+        if (!image1) throw new Error("Upload an image first");
+        const { applyAdjust } = await import("@/lib/image-tools");
+        const out = await applyAdjust(image1, {
+          brightness: adjBright, contrast: adjContrast, saturation: adjSat,
+          hue: adjHue, blur: adjBlur, sharpness: adjSharp,
+        });
+        res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "filters") {
+        if (!image1) throw new Error("Upload an image first");
+        const { applyFilter } = await import("@/lib/image-tools");
+        const out = await applyFilter(image1, filterPreset as any);
+        res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "histogram") {
+        if (!image1) throw new Error("Upload an image first");
+        const { renderHistogram } = await import("@/lib/image-tools");
+        const { dataUrl } = await renderHistogram(image1);
+        res = { type: "image", content: dataUrl, original: image1 };
+      } else if (activeTab === "convert") {
+        if (!image1) throw new Error("Upload an image first");
+        const { convertImage, compressToSize } = await import("@/lib/image-tools");
+        const target = parseInt(convTarget);
+        const r = target > 0
+          ? await compressToSize(image1, target * 1024, convFormat === "image/png" ? "image/jpeg" : convFormat)
+          : await convertImage(image1, convFormat, convQuality);
+        toast.success(`Output: ${(r.bytes / 1024).toFixed(1)} KB`);
+        res = { type: "image", content: r.dataUrl, original: image1 };
+      } else if (activeTab === "redact") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Detecting regions…");
+        const { detectFaces } = await import("@/lib/extra-services");
+        const { redactRegions } = await import("@/lib/image-tools");
+        const boxes = await detectFaces(image1, 0.4, faceModel, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        });
+        if (!boxes.length) throw new Error("No regions detected — try Faces tab with lower threshold");
+        const regions = boxes.map((b: any) => ({
+          x: b.box.xmin, y: b.box.ymin,
+          w: b.box.xmax - b.box.xmin, h: b.box.ymax - b.box.ymin,
+        }));
+        const out = await redactRegions(image1, regions, redactMode);
+        toast.success(`Redacted ${regions.length} region(s)`);
         res = { type: "image", content: out, original: image1 };
       } else {
         // Server-side AI
@@ -788,6 +851,103 @@ const Workspace = () => {
                       </div>
                     </div>
                   )}
+
+                  {t.id === "adjust" && (
+                    <div className="space-y-3 rounded-md border p-3 bg-muted/30">
+                      {[
+                        { label: "Brightness", value: adjBright, set: setAdjBright, min: -100, max: 100 },
+                        { label: "Contrast", value: adjContrast, set: setAdjContrast, min: -100, max: 100 },
+                        { label: "Saturation", value: adjSat, set: setAdjSat, min: -100, max: 100 },
+                        { label: "Hue", value: adjHue, set: setAdjHue, min: -180, max: 180 },
+                        { label: "Blur (px)", value: adjBlur, set: setAdjBlur, min: 0, max: 20 },
+                        { label: "Sharpness", value: adjSharp, set: setAdjSharp, min: 0, max: 100 },
+                      ].map((s) => (
+                        <div key={s.label}>
+                          <div className="flex justify-between text-xs">
+                            <Label>{s.label}</Label>
+                            <span className="font-mono text-muted-foreground">{s.value}</span>
+                          </div>
+                          <Slider value={[s.value]} min={s.min} max={s.max} step={1}
+                            onValueChange={([v]) => s.set(v)} className="mt-1.5" />
+                        </div>
+                      ))}
+                      <Button size="sm" variant="ghost" className="h-7 text-xs"
+                        onClick={() => { setAdjBright(0); setAdjContrast(0); setAdjSat(0); setAdjHue(0); setAdjBlur(0); setAdjSharp(0); }}>
+                        Reset all
+                      </Button>
+                    </div>
+                  )}
+
+                  {t.id === "filters" && (
+                    <Select value={filterPreset} onValueChange={setFilterPreset}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {[
+                          ["vintage","Vintage"],["cinematic","Cinematic"],["bw","Black & White"],
+                          ["noir","Noir"],["warm","Warm"],["cool","Cool"],["fade","Fade"],
+                          ["vivid","Vivid"],["sepia","Sepia"],["dramatic","Dramatic"],["lomo","Lomo"],
+                        ].map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  {t.id === "histogram" && (
+                    <p className="text-xs text-muted-foreground">
+                      Computes RGB + luminance distribution. Red/green/blue channels overlaid; white = luminance.
+                    </p>
+                  )}
+
+                  {t.id === "convert" && (
+                    <div className="space-y-3 rounded-md border p-3 bg-muted/30">
+                      <div>
+                        <Label className="text-xs">Format</Label>
+                        <Select value={convFormat} onValueChange={(v) => setConvFormat(v as any)}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="image/png">PNG (lossless)</SelectItem>
+                            <SelectItem value="image/jpeg">JPEG</SelectItem>
+                            <SelectItem value="image/webp">WebP</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-xs">
+                          <Label>Quality</Label>
+                          <span className="font-mono text-muted-foreground">{(convQuality * 100).toFixed(0)}%</span>
+                        </div>
+                        <Slider value={[convQuality * 100]} min={5} max={100} step={1}
+                          onValueChange={([v]) => setConvQuality(v / 100)} className="mt-1.5" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Target size (KB, optional)</Label>
+                        <Input value={convTarget} onChange={(e) => setConvTarget(e.target.value)}
+                          placeholder="e.g. 200" type="number" />
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          If set, quality is auto-tuned to hit this size (JPEG/WebP only).
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {t.id === "redact" && (
+                    <div className="space-y-3 rounded-md border p-3 bg-muted/30">
+                      <div>
+                        <Label className="text-xs">Redaction style</Label>
+                        <Select value={redactMode} onValueChange={(v) => setRedactMode(v as any)}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="black">Solid black bars</SelectItem>
+                            <SelectItem value="blur">Heavy blur</SelectItem>
+                            <SelectItem value="pixelate">Pixelate</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Auto-detects faces/objects with the current Faces detector model and redacts each region.
+                      </p>
+                    </div>
+                  )}
+
 
                   {t.id === "settings" && (
                     <div className="space-y-4">
