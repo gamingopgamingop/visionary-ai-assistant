@@ -34,7 +34,8 @@ import {
 type TabId =
   | "analyze" | "detect" | "ocr" | "compare" | "enhance" | "inpaint" | "style" | "generate"
   | "wasm" | "onnx" | "bgRemove" | "palette" | "imageToPrompt" | "editor"
-  | "depth" | "superres" | "caption" | "nsfw" | "faces" | "similarity" | "settings";
+  | "depth" | "superres" | "caption" | "nsfw" | "faces" | "similarity"
+  | "adjust" | "filters" | "histogram" | "convert" | "redact" | "settings";
 
 const tabs: {
   id: TabId; label: string; icon: React.ElementType;
