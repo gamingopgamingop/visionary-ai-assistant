@@ -29,6 +29,7 @@ import {
   Eye, ScanSearch, FileText, GitCompare, Sparkles, Eraser, Palette, Wand2, Cpu, Zap,
   Scissors, Droplet, MessageSquareQuote, Crop, Mountain, Maximize2, Smile, ShieldAlert,
   Type, Layers, Settings as SettingsIcon,
+  SlidersHorizontal, Filter, BarChart3, FileImage, EyeOff,
 } from "lucide-react";
 
 type TabId =
