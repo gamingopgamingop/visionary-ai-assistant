@@ -852,6 +852,103 @@ const Workspace = () => {
                     </div>
                   )}
 
+                  {t.id === "adjust" && (
+                    <div className="space-y-3 rounded-md border p-3 bg-muted/30">
+                      {[
+                        { label: "Brightness", value: adjBright, set: setAdjBright, min: -100, max: 100 },
+                        { label: "Contrast", value: adjContrast, set: setAdjContrast, min: -100, max: 100 },
+                        { label: "Saturation", value: adjSat, set: setAdjSat, min: -100, max: 100 },
+                        { label: "Hue", value: adjHue, set: setAdjHue, min: -180, max: 180 },
+                        { label: "Blur (px)", value: adjBlur, set: setAdjBlur, min: 0, max: 20 },
+                        { label: "Sharpness", value: adjSharp, set: setAdjSharp, min: 0, max: 100 },
+                      ].map((s) => (
+                        <div key={s.label}>
+                          <div className="flex justify-between text-xs">
+                            <Label>{s.label}</Label>
+                            <span className="font-mono text-muted-foreground">{s.value}</span>
+                          </div>
+                          <Slider value={[s.value]} min={s.min} max={s.max} step={1}
+                            onValueChange={([v]) => s.set(v)} className="mt-1.5" />
+                        </div>
+                      ))}
+                      <Button size="sm" variant="ghost" className="h-7 text-xs"
+                        onClick={() => { setAdjBright(0); setAdjContrast(0); setAdjSat(0); setAdjHue(0); setAdjBlur(0); setAdjSharp(0); }}>
+                        Reset all
+                      </Button>
+                    </div>
+                  )}
+
+                  {t.id === "filters" && (
+                    <Select value={filterPreset} onValueChange={setFilterPreset}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {[
+                          ["vintage","Vintage"],["cinematic","Cinematic"],["bw","Black & White"],
+                          ["noir","Noir"],["warm","Warm"],["cool","Cool"],["fade","Fade"],
+                          ["vivid","Vivid"],["sepia","Sepia"],["dramatic","Dramatic"],["lomo","Lomo"],
+                        ].map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  {t.id === "histogram" && (
+                    <p className="text-xs text-muted-foreground">
+                      Computes RGB + luminance distribution. Red/green/blue channels overlaid; white = luminance.
+                    </p>
+                  )}
+
+                  {t.id === "convert" && (
+                    <div className="space-y-3 rounded-md border p-3 bg-muted/30">
+                      <div>
+                        <Label className="text-xs">Format</Label>
+                        <Select value={convFormat} onValueChange={(v) => setConvFormat(v as any)}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="image/png">PNG (lossless)</SelectItem>
+                            <SelectItem value="image/jpeg">JPEG</SelectItem>
+                            <SelectItem value="image/webp">WebP</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-xs">
+                          <Label>Quality</Label>
+                          <span className="font-mono text-muted-foreground">{(convQuality * 100).toFixed(0)}%</span>
+                        </div>
+                        <Slider value={[convQuality * 100]} min={5} max={100} step={1}
+                          onValueChange={([v]) => setConvQuality(v / 100)} className="mt-1.5" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Target size (KB, optional)</Label>
+                        <Input value={convTarget} onChange={(e) => setConvTarget(e.target.value)}
+                          placeholder="e.g. 200" type="number" />
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          If set, quality is auto-tuned to hit this size (JPEG/WebP only).
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {t.id === "redact" && (
+                    <div className="space-y-3 rounded-md border p-3 bg-muted/30">
+                      <div>
+                        <Label className="text-xs">Redaction style</Label>
+                        <Select value={redactMode} onValueChange={(v) => setRedactMode(v as any)}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="black">Solid black bars</SelectItem>
+                            <SelectItem value="blur">Heavy blur</SelectItem>
+                            <SelectItem value="pixelate">Pixelate</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Auto-detects faces/objects with the current Faces detector model and redacts each region.
+                      </p>
+                    </div>
+                  )}
+
+
                   {t.id === "settings" && (
                     <div className="space-y-4">
                       <div>
