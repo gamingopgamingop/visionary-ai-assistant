@@ -1012,6 +1012,159 @@ const Workspace = () => {
                     </div>
                   )}
 
+                  {t.id === "stitch" && (
+                    <div className="space-y-3 rounded-md border p-3 bg-muted/30">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={async (e) => {
+                          const files = Array.from(e.target.files ?? []);
+                          const urls = await Promise.all(files.map(fileToBase64));
+                          setStitchSources((s) => [...s, ...urls]);
+                          e.target.value = "";
+                        }}
+                      />
+                      {stitchSources.length > 0 && (
+                        <div className="grid grid-cols-4 gap-2">
+                          {stitchSources.map((url, i) => (
+                            <div key={i} className="relative group">
+                              <img src={url} alt={`#${i + 1}`} className="w-full aspect-square object-cover rounded border" />
+                              <button
+                                onClick={() => setStitchSources((s) => s.filter((_, j) => j !== i))}
+                                className="absolute top-0.5 right-0.5 rounded bg-background/90 px-1 text-[10px] border opacity-0 group-hover:opacity-100"
+                              >✕</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">Direction</Label>
+                          <Select value={stitchDir} onValueChange={(v) => setStitchDir(v as any)}>
+                            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="horizontal">Horizontal</SelectItem>
+                              <SelectItem value="vertical">Vertical</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Gap (px)</Label>
+                          <Input type="number" value={stitchGap} onChange={(e) => setStitchGap(parseInt(e.target.value) || 0)} className="mt-1" />
+                        </div>
+                      </div>
+                      {stitchSources.length > 0 && (
+                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setStitchSources([])}>
+                          Clear all
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  {t.id === "diff" && (
+                    <div className="rounded-md border p-3 bg-muted/30">
+                      <div className="flex justify-between text-xs">
+                        <Label>Difference threshold</Label>
+                        <span className="font-mono text-muted-foreground">{diffThreshold}</span>
+                      </div>
+                      <Slider value={[diffThreshold]} min={0} max={120} step={1}
+                        onValueChange={([v]) => setDiffThreshold(v)} className="mt-1.5" />
+                      <p className="text-[11px] text-muted-foreground mt-2">
+                        Pixels with RGB distance above this are highlighted red. Lower = stricter.
+                      </p>
+                    </div>
+                  )}
+
+                  {t.id === "fingerprint" && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground">
+                        Computes a 64-bit perceptual hash (pHash via DCT). Add a second image to compare similarity.
+                      </p>
+                      <ImageUploader
+                        label="Compare image (optional)"
+                        image={image2}
+                        onDrop={(f) => handleImageDrop(f, 2)}
+                        onClear={() => setImage2(null)}
+                      />
+                      {fingerprintHash && (
+                        <div className="rounded border bg-muted/30 p-2">
+                          <p className="text-[11px] text-muted-foreground">Last hash</p>
+                          <p className="font-mono text-xs break-all">{fingerprintHash}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {t.id === "textOverlay" && (
+                    <div className="space-y-3 rounded-md border p-3 bg-muted/30">
+                      <div>
+                        <Label className="text-xs">Text</Label>
+                        <Input value={overlayText} onChange={(e) => setOverlayText(e.target.value)} className="mt-1" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">Position</Label>
+                          <Select value={overlayPos} onValueChange={(v) => setOverlayPos(v as any)}>
+                            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="top-left">Top left</SelectItem>
+                              <SelectItem value="top-right">Top right</SelectItem>
+                              <SelectItem value="bottom-left">Bottom left</SelectItem>
+                              <SelectItem value="bottom-right">Bottom right</SelectItem>
+                              <SelectItem value="center">Center</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Color</Label>
+                          <Input type="color" value={overlayColor} onChange={(e) => setOverlayColor(e.target.value)} className="mt-1 h-9 p-1" />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-xs">
+                          <Label>Font size (px)</Label>
+                          <span className="font-mono text-muted-foreground">{overlaySize}</span>
+                        </div>
+                        <Slider value={[overlaySize]} min={12} max={200} step={1}
+                          onValueChange={([v]) => setOverlaySize(v)} className="mt-1.5" />
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-xs">
+                          <Label>Opacity (%)</Label>
+                          <span className="font-mono text-muted-foreground">{overlayOpacity}</span>
+                        </div>
+                        <Slider value={[overlayOpacity]} min={10} max={100} step={1}
+                          onValueChange={([v]) => setOverlayOpacity(v)} className="mt-1.5" />
+                      </div>
+                      <label className="flex items-center gap-2 text-xs">
+                        <input type="checkbox" checked={overlayStroke} onChange={(e) => setOverlayStroke(e.target.checked)} />
+                        Black outline (readability)
+                      </label>
+                    </div>
+                  )}
+
+                  {t.id === "metadata" && (
+                    <div className="rounded-md border p-3 bg-muted/30 space-y-2">
+                      <div>
+                        <Label className="text-xs">Re-encode format</Label>
+                        <Select value={metadataFormat} onValueChange={(v) => setMetadataFormat(v as any)}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="image/png">PNG (lossless)</SelectItem>
+                            <SelectItem value="image/jpeg">JPEG</SelectItem>
+                            <SelectItem value="image/webp">WebP</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Re-encoding through canvas strips all EXIF / GPS / author / camera metadata. Outputs a clean copy you can safely share.
+                      </p>
+                    </div>
+                  )}
+
+
+
 
                   {t.id === "settings" && (
                     <div className="space-y-4">
