@@ -432,6 +432,45 @@ const Workspace = () => {
         const out = await redactRegions(image1, regions, redactMode);
         toast.success(`Redacted ${regions.length} region(s)`);
         res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "stitch") {
+        if (stitchSources.length < 2) throw new Error("Add at least 2 images to stitch");
+        const { stitchImages } = await import("@/lib/image-tools");
+        const out = await stitchImages(stitchSources, stitchDir, stitchGap);
+        toast.success(`Stitched ${stitchSources.length} images`);
+        res = { type: "image", content: out };
+      } else if (activeTab === "diff") {
+        if (!image1 || !image2) throw new Error("Upload both images");
+        const { imageDiff } = await import("@/lib/image-tools");
+        const d = await imageDiff(image1, image2, diffThreshold);
+        toast.success(`${d.pctDifferent.toFixed(2)}% pixels differ`);
+        res = { type: "image", content: d.dataUrl, original: image1 };
+      } else if (activeTab === "fingerprint") {
+        if (!image1) throw new Error("Upload an image first");
+        const { perceptualHash, hammingDistance } = await import("@/lib/image-tools");
+        const h1 = await perceptualHash(image1);
+        setFingerprintHash(h1);
+        let text = `pHash: ${h1}\n(64-bit perceptual hash — same scene ≈ low Hamming distance)`;
+        if (image2) {
+          const h2 = await perceptualHash(image2);
+          const dist = hammingDistance(h1, h2);
+          const sim = ((64 - dist) / 64) * 100;
+          text += `\n\nCompare hash: ${h2}\nHamming distance: ${dist} / 64\nSimilarity: ${sim.toFixed(1)}%`;
+        }
+        res = { type: "text", content: text };
+      } else if (activeTab === "textOverlay") {
+        if (!image1) throw new Error("Upload an image first");
+        const { addTextOverlay } = await import("@/lib/image-tools");
+        const out = await addTextOverlay(image1, {
+          text: overlayText, size: overlaySize, color: overlayColor,
+          opacity: overlayOpacity / 100, position: overlayPos, stroke: overlayStroke,
+        });
+        res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "metadata") {
+        if (!image1) throw new Error("Upload an image first");
+        const { stripMetadata } = await import("@/lib/image-tools");
+        const { dataUrl, bytes } = await stripMetadata(image1, metadataFormat);
+        toast.success(`Re-encoded (EXIF stripped): ${(bytes / 1024).toFixed(1)} KB`);
+        res = { type: "image", content: dataUrl, original: image1 };
       } else {
         // Server-side AI
         const body: Record<string, unknown> = { action: activeTab };
