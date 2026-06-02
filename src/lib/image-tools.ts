@@ -242,3 +242,187 @@ export async function redactRegions(
   }
   return c.toDataURL("image/png");
 }
+
+/* ---------- Stitch (panorama-style concat) ---------- */
+export async function stitchImages(
+  sources: string[],
+  direction: "horizontal" | "vertical" = "horizontal",
+  gap = 0,
+  background = "#000000",
+): Promise<string> {
+  if (!sources.length) throw new Error("Provide at least one image");
+  const imgs = await Promise.all(sources.map(loadImg));
+  let W = 0, H = 0;
+  if (direction === "horizontal") {
+    H = Math.max(...imgs.map((i) => i.naturalHeight));
+    W = imgs.reduce((s, i) => s + Math.round((i.naturalWidth * H) / i.naturalHeight), 0) + gap * (imgs.length - 1);
+  } else {
+    W = Math.max(...imgs.map((i) => i.naturalWidth));
+    H = imgs.reduce((s, i) => s + Math.round((i.naturalHeight * W) / i.naturalWidth), 0) + gap * (imgs.length - 1);
+  }
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, W, H);
+  let cursor = 0;
+  for (const img of imgs) {
+    if (direction === "horizontal") {
+      const w = Math.round((img.naturalWidth * H) / img.naturalHeight);
+      ctx.drawImage(img, cursor, 0, w, H);
+      cursor += w + gap;
+    } else {
+      const h = Math.round((img.naturalHeight * W) / img.naturalWidth);
+      ctx.drawImage(img, 0, cursor, W, h);
+      cursor += h + gap;
+    }
+  }
+  return c.toDataURL("image/png");
+}
+
+/* ---------- Pixel diff with heatmap ---------- */
+export async function imageDiff(
+  srcA: string,
+  srcB: string,
+  threshold = 20,
+): Promise<{ dataUrl: string; diffPixels: number; totalPixels: number; pctDifferent: number }> {
+  const [a, b] = await Promise.all([loadImg(srcA), loadImg(srcB)]);
+  const W = Math.max(a.naturalWidth, b.naturalWidth);
+  const H = Math.max(a.naturalHeight, b.naturalHeight);
+  const mk = (img: HTMLImageElement) => {
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const x = c.getContext("2d")!;
+    x.drawImage(img, 0, 0, W, H);
+    return x.getImageData(0, 0, W, H);
+  };
+  const A = mk(a), B = mk(b);
+  const out = document.createElement("canvas");
+  out.width = W; out.height = H;
+  const octx = out.getContext("2d")!;
+  const oi = octx.createImageData(W, H);
+  let diffPx = 0;
+  for (let i = 0; i < A.data.length; i += 4) {
+    const dr = A.data[i] - B.data[i];
+    const dg = A.data[i + 1] - B.data[i + 1];
+    const db = A.data[i + 2] - B.data[i + 2];
+    const mag = Math.sqrt(dr * dr + dg * dg + db * db);
+    if (mag > threshold) {
+      diffPx++;
+      // Heatmap: red intensity by magnitude
+      const t = Math.min(1, mag / 255);
+      oi.data[i] = 255;
+      oi.data[i + 1] = Math.round(255 * (1 - t));
+      oi.data[i + 2] = 0;
+      oi.data[i + 3] = 200;
+    } else {
+      // Greyed-out base
+      const lum = (A.data[i] + A.data[i + 1] + A.data[i + 2]) / 3;
+      oi.data[i] = oi.data[i + 1] = oi.data[i + 2] = Math.round(lum * 0.4 + 100);
+      oi.data[i + 3] = 255;
+    }
+  }
+  octx.putImageData(oi, 0, 0);
+  const total = W * H;
+  return { dataUrl: out.toDataURL("image/png"), diffPixels: diffPx, totalPixels: total, pctDifferent: (diffPx / total) * 100 };
+}
+
+/* ---------- Perceptual hash (pHash via 32×32 DCT) ---------- */
+function dct1d(v: number[]): number[] {
+  const N = v.length;
+  const out = new Array(N).fill(0);
+  for (let k = 0; k < N; k++) {
+    let s = 0;
+    for (let n = 0; n < N; n++) s += v[n] * Math.cos((Math.PI / N) * (n + 0.5) * k);
+    out[k] = s;
+  }
+  return out;
+}
+export async function perceptualHash(src: string): Promise<string> {
+  const img = await loadImg(src);
+  const SIZE = 32;
+  const c = document.createElement("canvas");
+  c.width = SIZE; c.height = SIZE;
+  const ctx = c.getContext("2d")!;
+  ctx.drawImage(img, 0, 0, SIZE, SIZE);
+  const id = ctx.getImageData(0, 0, SIZE, SIZE);
+  const grey: number[][] = [];
+  for (let y = 0; y < SIZE; y++) {
+    const row: number[] = [];
+    for (let x = 0; x < SIZE; x++) {
+      const i = (y * SIZE + x) * 4;
+      row.push(0.299 * id.data[i] + 0.587 * id.data[i + 1] + 0.114 * id.data[i + 2]);
+    }
+    grey.push(row);
+  }
+  const rows = grey.map(dct1d);
+  const cols: number[][] = Array.from({ length: SIZE }, () => new Array(SIZE).fill(0));
+  for (let x = 0; x < SIZE; x++) {
+    const col = rows.map((r) => r[x]);
+    const d = dct1d(col);
+    for (let y = 0; y < SIZE; y++) cols[y][x] = d[y];
+  }
+  // Take top-left 8×8, skip DC
+  const block: number[] = [];
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) block.push(cols[y][x]);
+  const dc = block[0];
+  const rest = block.slice(1);
+  const sorted = [...rest].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)];
+  let bits = "";
+  for (const v of block) bits += v > median ? "1" : "0";
+  let hex = "";
+  for (let i = 0; i < bits.length; i += 4) hex += parseInt(bits.slice(i, i + 4), 2).toString(16);
+  void dc;
+  return hex;
+}
+export function hammingDistance(a: string, b: string): number {
+  const aBits = BigInt("0x" + a);
+  const bBits = BigInt("0x" + b);
+  let x = aBits ^ bBits;
+  let d = 0;
+  while (x) { d += Number(x & 1n); x >>= 1n; }
+  return d;
+}
+
+/* ---------- Text overlay ---------- */
+export interface TextOverlayParams {
+  text: string;
+  font?: string;          // e.g. "Inter, sans-serif"
+  size?: number;          // px
+  color?: string;
+  opacity?: number;       // 0..1
+  position?: "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center";
+  padding?: number;
+  stroke?: boolean;
+  strokeColor?: string;
+}
+export async function addTextOverlay(src: string, p: TextOverlayParams): Promise<string> {
+  const img = await loadImg(src);
+  const { c, ctx } = canvasFromImg(img);
+  const size = p.size ?? Math.max(24, Math.round(c.height / 18));
+  ctx.font = `bold ${size}px ${p.font ?? "system-ui, sans-serif"}`;
+  ctx.fillStyle = p.color ?? "#ffffff";
+  ctx.globalAlpha = p.opacity ?? 1;
+  const pad = p.padding ?? 24;
+  const m = ctx.measureText(p.text);
+  let x = pad, y = pad + size;
+  const pos = p.position ?? "bottom-right";
+  if (pos.includes("right")) x = c.width - m.width - pad;
+  if (pos.includes("bottom")) y = c.height - pad;
+  if (pos === "center") { x = (c.width - m.width) / 2; y = (c.height + size) / 2; }
+  if (p.stroke) {
+    ctx.lineWidth = Math.max(2, size / 12);
+    ctx.strokeStyle = p.strokeColor ?? "#000000";
+    ctx.strokeText(p.text, x, y);
+  }
+  ctx.fillText(p.text, x, y);
+  ctx.globalAlpha = 1;
+  return c.toDataURL("image/png");
+}
+
+/* ---------- Metadata strip (re-encode loses EXIF) ---------- */
+export async function stripMetadata(src: string, format: OutFormat = "image/png", quality = 0.95): Promise<{ dataUrl: string; bytes: number }> {
+  return convertImage(src, format, quality);
+}
+
