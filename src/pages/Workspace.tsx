@@ -70,6 +70,11 @@ const tabs: {
   { id: "histogram", label: "Histogram", icon: BarChart3, needsImage: true },
   { id: "convert", label: "Convert", icon: FileImage, needsImage: true },
   { id: "redact", label: "Redact", icon: EyeOff, needsImage: true },
+  { id: "stitch", label: "Stitch", icon: Combine, needsImage: false },
+  { id: "diff", label: "Diff", icon: GitCompareArrows, needsImage: true, needsSecondImage: true },
+  { id: "fingerprint", label: "Fingerprint", icon: FingerprintIcon, needsImage: true },
+  { id: "textOverlay", label: "Text Overlay", icon: Type, needsImage: true },
+  { id: "metadata", label: "Metadata", icon: FileJson, needsImage: true },
   { id: "settings", label: "Settings", icon: SettingsIcon, needsImage: false },
 ];
 
