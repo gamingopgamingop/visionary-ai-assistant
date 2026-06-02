@@ -30,13 +30,15 @@ import {
   Scissors, Droplet, MessageSquareQuote, Crop, Mountain, Maximize2, Smile, ShieldAlert,
   Type, Layers, Settings as SettingsIcon,
   SlidersHorizontal, Filter, BarChart3, FileImage, EyeOff,
+  Combine, GitCompareArrows, Fingerprint as FingerprintIcon, FileJson,
 } from "lucide-react";
 
 type TabId =
   | "analyze" | "detect" | "ocr" | "compare" | "enhance" | "inpaint" | "style" | "generate"
   | "wasm" | "onnx" | "bgRemove" | "palette" | "imageToPrompt" | "editor"
   | "depth" | "superres" | "caption" | "nsfw" | "faces" | "similarity"
-  | "adjust" | "filters" | "histogram" | "convert" | "redact" | "settings";
+  | "adjust" | "filters" | "histogram" | "convert" | "redact"
+  | "stitch" | "diff" | "fingerprint" | "textOverlay" | "metadata" | "settings";
 
 const tabs: {
   id: TabId; label: string; icon: React.ElementType;
