@@ -30,13 +30,15 @@ import {
   Scissors, Droplet, MessageSquareQuote, Crop, Mountain, Maximize2, Smile, ShieldAlert,
   Type, Layers, Settings as SettingsIcon,
   SlidersHorizontal, Filter, BarChart3, FileImage, EyeOff,
+  Combine, GitCompareArrows, Fingerprint as FingerprintIcon, FileJson,
 } from "lucide-react";
 
 type TabId =
   | "analyze" | "detect" | "ocr" | "compare" | "enhance" | "inpaint" | "style" | "generate"
   | "wasm" | "onnx" | "bgRemove" | "palette" | "imageToPrompt" | "editor"
   | "depth" | "superres" | "caption" | "nsfw" | "faces" | "similarity"
-  | "adjust" | "filters" | "histogram" | "convert" | "redact" | "settings";
+  | "adjust" | "filters" | "histogram" | "convert" | "redact"
+  | "stitch" | "diff" | "fingerprint" | "textOverlay" | "metadata" | "settings";
 
 const tabs: {
   id: TabId; label: string; icon: React.ElementType;
@@ -68,6 +70,11 @@ const tabs: {
   { id: "histogram", label: "Histogram", icon: BarChart3, needsImage: true },
   { id: "convert", label: "Convert", icon: FileImage, needsImage: true },
   { id: "redact", label: "Redact", icon: EyeOff, needsImage: true },
+  { id: "stitch", label: "Stitch", icon: Combine, needsImage: false },
+  { id: "diff", label: "Diff", icon: GitCompareArrows, needsImage: true, needsSecondImage: true },
+  { id: "fingerprint", label: "Fingerprint", icon: FingerprintIcon, needsImage: true },
+  { id: "textOverlay", label: "Text Overlay", icon: Type, needsImage: true },
+  { id: "metadata", label: "Metadata", icon: FileJson, needsImage: true },
   { id: "settings", label: "Settings", icon: SettingsIcon, needsImage: false },
 ];
 
@@ -170,6 +177,24 @@ const Workspace = () => {
   const [convQuality, setConvQuality] = usePersistedState<number>("ait_ws_conv_q", 0.85);
   const [convTarget, setConvTarget] = usePersistedState<string>("ait_ws_conv_t", "");
   const [redactMode, setRedactMode] = usePersistedState<"black" | "blur" | "pixelate">("ait_ws_red_m", "black");
+
+  // Stitch
+  const [stitchSources, setStitchSources] = useState<string[]>([]);
+  const [stitchDir, setStitchDir] = usePersistedState<"horizontal" | "vertical">("ait_ws_stitch_dir", "horizontal");
+  const [stitchGap, setStitchGap] = usePersistedState<number>("ait_ws_stitch_gap", 0);
+  // Diff
+  const [diffThreshold, setDiffThreshold] = usePersistedState<number>("ait_ws_diff_t", 20);
+  // Fingerprint
+  const [fingerprintHash, setFingerprintHash] = useState<string>("");
+  // Text overlay
+  const [overlayText, setOverlayText] = usePersistedState<string>("ait_ws_ovr_t", "Sample");
+  const [overlaySize, setOverlaySize] = usePersistedState<number>("ait_ws_ovr_s", 48);
+  const [overlayColor, setOverlayColor] = usePersistedState<string>("ait_ws_ovr_c", "#ffffff");
+  const [overlayOpacity, setOverlayOpacity] = usePersistedState<number>("ait_ws_ovr_o", 90);
+  const [overlayPos, setOverlayPos] = usePersistedState<"top-left" | "top-right" | "bottom-left" | "bottom-right" | "center">("ait_ws_ovr_p", "bottom-right");
+  const [overlayStroke, setOverlayStroke] = usePersistedState<boolean>("ait_ws_ovr_st", true);
+  // Metadata
+  const [metadataFormat, setMetadataFormat] = usePersistedState<"image/png" | "image/jpeg" | "image/webp">("ait_ws_meta_fmt", "image/png");
 
   const currentTab = tabs.find((t) => t.id === activeTab)!;
 
@@ -407,6 +432,45 @@ const Workspace = () => {
         const out = await redactRegions(image1, regions, redactMode);
         toast.success(`Redacted ${regions.length} region(s)`);
         res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "stitch") {
+        if (stitchSources.length < 2) throw new Error("Add at least 2 images to stitch");
+        const { stitchImages } = await import("@/lib/image-tools");
+        const out = await stitchImages(stitchSources, stitchDir, stitchGap);
+        toast.success(`Stitched ${stitchSources.length} images`);
+        res = { type: "image", content: out };
+      } else if (activeTab === "diff") {
+        if (!image1 || !image2) throw new Error("Upload both images");
+        const { imageDiff } = await import("@/lib/image-tools");
+        const d = await imageDiff(image1, image2, diffThreshold);
+        toast.success(`${d.pctDifferent.toFixed(2)}% pixels differ`);
+        res = { type: "image", content: d.dataUrl, original: image1 };
+      } else if (activeTab === "fingerprint") {
+        if (!image1) throw new Error("Upload an image first");
+        const { perceptualHash, hammingDistance } = await import("@/lib/image-tools");
+        const h1 = await perceptualHash(image1);
+        setFingerprintHash(h1);
+        let text = `pHash: ${h1}\n(64-bit perceptual hash — same scene ≈ low Hamming distance)`;
+        if (image2) {
+          const h2 = await perceptualHash(image2);
+          const dist = hammingDistance(h1, h2);
+          const sim = ((64 - dist) / 64) * 100;
+          text += `\n\nCompare hash: ${h2}\nHamming distance: ${dist} / 64\nSimilarity: ${sim.toFixed(1)}%`;
+        }
+        res = { type: "text", content: text };
+      } else if (activeTab === "textOverlay") {
+        if (!image1) throw new Error("Upload an image first");
+        const { addTextOverlay } = await import("@/lib/image-tools");
+        const out = await addTextOverlay(image1, {
+          text: overlayText, size: overlaySize, color: overlayColor,
+          opacity: overlayOpacity / 100, position: overlayPos, stroke: overlayStroke,
+        });
+        res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "metadata") {
+        if (!image1) throw new Error("Upload an image first");
+        const { stripMetadata } = await import("@/lib/image-tools");
+        const { dataUrl, bytes } = await stripMetadata(image1, metadataFormat);
+        toast.success(`Re-encoded (EXIF stripped): ${(bytes / 1024).toFixed(1)} KB`);
+        res = { type: "image", content: dataUrl, original: image1 };
       } else {
         // Server-side AI
         const body: Record<string, unknown> = { action: activeTab };
@@ -947,6 +1011,159 @@ const Workspace = () => {
                       </p>
                     </div>
                   )}
+
+                  {t.id === "stitch" && (
+                    <div className="space-y-3 rounded-md border p-3 bg-muted/30">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={async (e) => {
+                          const files = Array.from(e.target.files ?? []);
+                          const urls = await Promise.all(files.map(fileToBase64));
+                          setStitchSources((s) => [...s, ...urls]);
+                          e.target.value = "";
+                        }}
+                      />
+                      {stitchSources.length > 0 && (
+                        <div className="grid grid-cols-4 gap-2">
+                          {stitchSources.map((url, i) => (
+                            <div key={i} className="relative group">
+                              <img src={url} alt={`#${i + 1}`} className="w-full aspect-square object-cover rounded border" />
+                              <button
+                                onClick={() => setStitchSources((s) => s.filter((_, j) => j !== i))}
+                                className="absolute top-0.5 right-0.5 rounded bg-background/90 px-1 text-[10px] border opacity-0 group-hover:opacity-100"
+                              >✕</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">Direction</Label>
+                          <Select value={stitchDir} onValueChange={(v) => setStitchDir(v as any)}>
+                            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="horizontal">Horizontal</SelectItem>
+                              <SelectItem value="vertical">Vertical</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Gap (px)</Label>
+                          <Input type="number" value={stitchGap} onChange={(e) => setStitchGap(parseInt(e.target.value) || 0)} className="mt-1" />
+                        </div>
+                      </div>
+                      {stitchSources.length > 0 && (
+                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setStitchSources([])}>
+                          Clear all
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  {t.id === "diff" && (
+                    <div className="rounded-md border p-3 bg-muted/30">
+                      <div className="flex justify-between text-xs">
+                        <Label>Difference threshold</Label>
+                        <span className="font-mono text-muted-foreground">{diffThreshold}</span>
+                      </div>
+                      <Slider value={[diffThreshold]} min={0} max={120} step={1}
+                        onValueChange={([v]) => setDiffThreshold(v)} className="mt-1.5" />
+                      <p className="text-[11px] text-muted-foreground mt-2">
+                        Pixels with RGB distance above this are highlighted red. Lower = stricter.
+                      </p>
+                    </div>
+                  )}
+
+                  {t.id === "fingerprint" && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground">
+                        Computes a 64-bit perceptual hash (pHash via DCT). Add a second image to compare similarity.
+                      </p>
+                      <ImageUploader
+                        label="Compare image (optional)"
+                        image={image2}
+                        onDrop={(f) => handleImageDrop(f, 2)}
+                        onClear={() => setImage2(null)}
+                      />
+                      {fingerprintHash && (
+                        <div className="rounded border bg-muted/30 p-2">
+                          <p className="text-[11px] text-muted-foreground">Last hash</p>
+                          <p className="font-mono text-xs break-all">{fingerprintHash}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {t.id === "textOverlay" && (
+                    <div className="space-y-3 rounded-md border p-3 bg-muted/30">
+                      <div>
+                        <Label className="text-xs">Text</Label>
+                        <Input value={overlayText} onChange={(e) => setOverlayText(e.target.value)} className="mt-1" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">Position</Label>
+                          <Select value={overlayPos} onValueChange={(v) => setOverlayPos(v as any)}>
+                            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="top-left">Top left</SelectItem>
+                              <SelectItem value="top-right">Top right</SelectItem>
+                              <SelectItem value="bottom-left">Bottom left</SelectItem>
+                              <SelectItem value="bottom-right">Bottom right</SelectItem>
+                              <SelectItem value="center">Center</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Color</Label>
+                          <Input type="color" value={overlayColor} onChange={(e) => setOverlayColor(e.target.value)} className="mt-1 h-9 p-1" />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-xs">
+                          <Label>Font size (px)</Label>
+                          <span className="font-mono text-muted-foreground">{overlaySize}</span>
+                        </div>
+                        <Slider value={[overlaySize]} min={12} max={200} step={1}
+                          onValueChange={([v]) => setOverlaySize(v)} className="mt-1.5" />
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-xs">
+                          <Label>Opacity (%)</Label>
+                          <span className="font-mono text-muted-foreground">{overlayOpacity}</span>
+                        </div>
+                        <Slider value={[overlayOpacity]} min={10} max={100} step={1}
+                          onValueChange={([v]) => setOverlayOpacity(v)} className="mt-1.5" />
+                      </div>
+                      <label className="flex items-center gap-2 text-xs">
+                        <input type="checkbox" checked={overlayStroke} onChange={(e) => setOverlayStroke(e.target.checked)} />
+                        Black outline (readability)
+                      </label>
+                    </div>
+                  )}
+
+                  {t.id === "metadata" && (
+                    <div className="rounded-md border p-3 bg-muted/30 space-y-2">
+                      <div>
+                        <Label className="text-xs">Re-encode format</Label>
+                        <Select value={metadataFormat} onValueChange={(v) => setMetadataFormat(v as any)}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="image/png">PNG (lossless)</SelectItem>
+                            <SelectItem value="image/jpeg">JPEG</SelectItem>
+                            <SelectItem value="image/webp">WebP</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Re-encoding through canvas strips all EXIF / GPS / author / camera metadata. Outputs a clean copy you can safely share.
+                      </p>
+                    </div>
+                  )}
+
+
 
 
                   {t.id === "settings" && (

@@ -1,57 +1,39 @@
+# Rollout plan
 
+You said "all four" — that's ~3 sprints of work. I'll ship one batch per turn so each lands reviewable and working, instead of a single mega-commit that breaks the build. Confirm or reorder and I'll start.
 
-# AI Image Toolkit
+## Batch 1 — More editing tools (this turn, if approved)
+Pure client-side, extends `src/lib/image-tools.ts` and adds tabs to `Workspace.tsx`. No backend.
+- **Crop / Rotate / Flip** — drag-handle crop, rotation slider, flip H/V
+- **Resize** — pixel or % with aspect lock
+- **Text Overlay** — font, size, color, position, opacity
+- **Draw** — freehand brush canvas layer with eraser
+- **Masking helper** — rectangle/brush mask to scope Redact/Inpaint
+- **Stitch** — horizontal/vertical concat of 2–5 images
+- **Diff** — pixel-diff heatmap between two images
+- **Fingerprint** — pHash + similarity vs a comparison image
+- **Metadata / EXIF strip** — view + strip via canvas re-encode
 
-A clean, minimal web app that serves as an all-in-one AI-powered image tool. Users upload images and choose from a suite of AI-powered features.
+## Batch 2 — More AI tabs
+Transformers.js, no new infra.
+- **Segment** (SAM-style) · **Classify** (ViT) · **Colorize** · **Upscale AI**
+- Each gated by quota hook (added in Batch 3)
 
-## Pages & Layout
+## Batch 3 — Navbar + Pricing + Quotas + Stripe
+- Extract `src/components/Navbar.tsx` (sticky, glass, mobile sheet, Clerk-aware)
+- `/pricing` page with monthly/yearly toggle, 3 tiers
+- Supabase tables: `user_plans`, `usage_tracking` (with RLS + grants)
+- `useQuota` + `QuotaBar` + `UpgradeModal`
+- Edge functions: `create-checkout`, `stripe-webhook`
+- Requires Stripe secret key from you
 
-### Landing Page
-- Hero section explaining the toolkit with a clean, modern look
-- Feature cards showing all available tools
-- Central "Get Started" call-to-action
+## Batch 4 — Fallback auth (Auth0 → Logto → FusionAuth → Supabase email)
+- `AuthProvider` with timeout detection on Clerk
+- `useCurrentUser` returns unified shape regardless of provider
+- `FallbackAuthModal` with social grids per provider
+- `/callback` route, password reset page
+- Requires env vars + app IDs from each provider you want enabled
 
-### Image Workspace (main app page)
-- Drag-and-drop image upload area (or click to browse)
-- Tab-based tool selector across the top
-- Side-by-side before/after view for transformation tools
-- Download button for all results
+---
 
-## AI Features (tabs)
-
-### 1. Analyze
-Upload an image and get a detailed AI description — what's in it, colors, mood, composition.
-
-### 2. Detect Objects
-Identify and label objects found in the image with a structured list of detected items.
-
-### 3. Extract Text (OCR)
-Pull text content from photos, screenshots, documents, or receipts. Display extracted text in a copyable format.
-
-### 4. Compare Images
-Upload two images side-by-side and get an AI analysis of similarities and differences.
-
-### 5. Enhance / Upscale
-Upload a low-quality image and get an enhanced, sharper version back.
-
-### 6. Inpaint / Repair
-Upload a damaged or incomplete image and have AI fill in the missing parts.
-
-### 7. Style Transfer
-Upload an image and describe a style (e.g., "oil painting", "anime") to get a restyled version.
-
-### 8. Generate from Description
-Type a text prompt and generate a new image from scratch.
-
-## Backend
-- Lovable Cloud with edge functions calling Lovable AI Gateway
-- Uses Gemini models for image analysis (text tasks) and Gemini image model for generation/reconstruction tasks
-- All AI processing happens server-side via edge functions
-
-## Design
-- Clean white/light theme with subtle gray accents
-- Large image previews as the focal point
-- Minimal chrome — the images are the star
-- Loading states with progress indicators during AI processing
-- Responsive layout for mobile and desktop
-
+Reply with **"go"** to start Batch 1, or reorder (e.g. "navbar first") and I'll start there.
