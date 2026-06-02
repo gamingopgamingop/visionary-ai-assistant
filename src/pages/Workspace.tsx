@@ -178,6 +178,24 @@ const Workspace = () => {
   const [convTarget, setConvTarget] = usePersistedState<string>("ait_ws_conv_t", "");
   const [redactMode, setRedactMode] = usePersistedState<"black" | "blur" | "pixelate">("ait_ws_red_m", "black");
 
+  // Stitch
+  const [stitchSources, setStitchSources] = useState<string[]>([]);
+  const [stitchDir, setStitchDir] = usePersistedState<"horizontal" | "vertical">("ait_ws_stitch_dir", "horizontal");
+  const [stitchGap, setStitchGap] = usePersistedState<number>("ait_ws_stitch_gap", 0);
+  // Diff
+  const [diffThreshold, setDiffThreshold] = usePersistedState<number>("ait_ws_diff_t", 20);
+  // Fingerprint
+  const [fingerprintHash, setFingerprintHash] = useState<string>("");
+  // Text overlay
+  const [overlayText, setOverlayText] = usePersistedState<string>("ait_ws_ovr_t", "Sample");
+  const [overlaySize, setOverlaySize] = usePersistedState<number>("ait_ws_ovr_s", 48);
+  const [overlayColor, setOverlayColor] = usePersistedState<string>("ait_ws_ovr_c", "#ffffff");
+  const [overlayOpacity, setOverlayOpacity] = usePersistedState<number>("ait_ws_ovr_o", 90);
+  const [overlayPos, setOverlayPos] = usePersistedState<"top-left" | "top-right" | "bottom-left" | "bottom-right" | "center">("ait_ws_ovr_p", "bottom-right");
+  const [overlayStroke, setOverlayStroke] = usePersistedState<boolean>("ait_ws_ovr_st", true);
+  // Metadata
+  const [metadataFormat, setMetadataFormat] = usePersistedState<"image/png" | "image/jpeg" | "image/webp">("ait_ws_meta_fmt", "image/png");
+
   const currentTab = tabs.find((t) => t.id === activeTab)!;
 
   const fileToBase64 = (file: File): Promise<string> =>
