@@ -39,7 +39,9 @@ type TabId =
   | "wasm" | "onnx" | "bgRemove" | "palette" | "imageToPrompt" | "editor"
   | "depth" | "superres" | "caption" | "nsfw" | "faces" | "similarity"
   | "adjust" | "filters" | "histogram" | "convert" | "redact"
-  | "stitch" | "diff" | "fingerprint" | "textOverlay" | "metadata" | "settings";
+  | "stitch" | "diff" | "fingerprint" | "textOverlay" | "metadata"
+  | "segment" | "classify" | "upscaleAI" | "colorize"
+  | "settings";
 
 const tabs: {
   id: TabId; label: string; icon: React.ElementType;
