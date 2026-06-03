@@ -31,6 +31,7 @@ import {
   Type, Layers, Settings as SettingsIcon,
   SlidersHorizontal, Filter, BarChart3, FileImage, EyeOff,
   Combine, GitCompareArrows, Fingerprint as FingerprintIcon, FileJson,
+  Boxes, Tags, Rainbow, ArrowUpRightSquare,
 } from "lucide-react";
 
 type TabId =
