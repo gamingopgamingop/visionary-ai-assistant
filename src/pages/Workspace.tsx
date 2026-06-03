@@ -31,6 +31,7 @@ import {
   Type, Layers, Settings as SettingsIcon,
   SlidersHorizontal, Filter, BarChart3, FileImage, EyeOff,
   Combine, GitCompareArrows, Fingerprint as FingerprintIcon, FileJson,
+  Boxes, Tags, Rainbow, ArrowUpRightSquare,
 } from "lucide-react";
 
 type TabId =
@@ -38,7 +39,9 @@ type TabId =
   | "wasm" | "onnx" | "bgRemove" | "palette" | "imageToPrompt" | "editor"
   | "depth" | "superres" | "caption" | "nsfw" | "faces" | "similarity"
   | "adjust" | "filters" | "histogram" | "convert" | "redact"
-  | "stitch" | "diff" | "fingerprint" | "textOverlay" | "metadata" | "settings";
+  | "stitch" | "diff" | "fingerprint" | "textOverlay" | "metadata"
+  | "segment" | "classify" | "upscaleAI" | "colorize"
+  | "settings";
 
 const tabs: {
   id: TabId; label: string; icon: React.ElementType;
@@ -75,6 +78,10 @@ const tabs: {
   { id: "fingerprint", label: "Fingerprint", icon: FingerprintIcon, needsImage: true },
   { id: "textOverlay", label: "Text Overlay", icon: Type, needsImage: true },
   { id: "metadata", label: "Metadata", icon: FileJson, needsImage: true },
+  { id: "segment", label: "Segment", icon: Boxes, needsImage: true },
+  { id: "classify", label: "Classify", icon: Tags, needsImage: true },
+  { id: "upscaleAI", label: "Upscale AI", icon: ArrowUpRightSquare, needsImage: true },
+  { id: "colorize", label: "Colorize", icon: Rainbow, needsImage: true },
   { id: "settings", label: "Settings", icon: SettingsIcon, needsImage: false },
 ];
 
@@ -196,7 +203,28 @@ const Workspace = () => {
   // Metadata
   const [metadataFormat, setMetadataFormat] = usePersistedState<"image/png" | "image/jpeg" | "image/webp">("ait_ws_meta_fmt", "image/png");
 
+  // Batch 2 AI: Classify / Segment / Upscale AI / Colorize
+  const CLASSIFY_MODELS = [
+    { value: "Xenova/vit-base-patch16-224", label: "ViT Base (ImageNet)" },
+    { value: "Xenova/mobilenet_v2_1.0_224", label: "MobileNet v2" },
+    { value: "Xenova/resnet-50", label: "ResNet-50" },
+  ];
+  const SEGMENT_MODELS = [
+    { value: "Xenova/segformer-b0-finetuned-ade-512-512", label: "SegFormer B0 (ADE20K)" },
+    { value: "Xenova/segformer_b2_clothes", label: "SegFormer (clothes)" },
+  ];
+  const UPSCALE_AI_MODELS = [
+    { value: "Xenova/swin2SR-compressed-sr-x4-48", label: "Swin2SR x4 (compressed)" },
+    { value: "Xenova/swin2SR-classical-sr-x2-64", label: "Swin2SR x2 (classical)" },
+    { value: "Xenova/swin2SR-lightweight-x2-64", label: "Swin2SR x2 (lightweight)" },
+  ];
+  const [classifyModel, setClassifyModel] = usePersistedState<string>("ait_ws_classify_m", CLASSIFY_MODELS[0].value);
+  const [segmentModel, setSegmentModel] = usePersistedState<string>("ait_ws_segment_m", SEGMENT_MODELS[0].value);
+  const [upscaleAIModel, setUpscaleAIModel] = usePersistedState<string>("ait_ws_upscaleai_m", UPSCALE_AI_MODELS[0].value);
+  const [colorizeTone, setColorizeTone] = usePersistedState<"warm" | "cool" | "sepia" | "vibrant">("ait_ws_colorize_t", "warm");
+
   const currentTab = tabs.find((t) => t.id === activeTab)!;
+
 
   const fileToBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -471,6 +499,43 @@ const Workspace = () => {
         const { dataUrl, bytes } = await stripMetadata(image1, metadataFormat);
         toast.success(`Re-encoded (EXIF stripped): ${(bytes / 1024).toFixed(1)} KB`);
         res = { type: "image", content: dataUrl, original: image1 };
+      } else if (activeTab === "classify") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading classifier…");
+        setLoadingProgress(0);
+        const { classifyImage } = await import("@/lib/extra-services");
+        const out = await classifyImage(image1, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        }, classifyModel, 5);
+        const text = out.map((o, i) => `${i + 1}. ${o.label} — ${(o.score * 100).toFixed(1)}%`).join("\n");
+        res = { type: "text", content: `Top predictions:\n${text}` };
+      } else if (activeTab === "segment") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading segmenter…");
+        setLoadingProgress(0);
+        const { segmentImage } = await import("@/lib/extra-services");
+        const { dataUrl, segments } = await segmentImage(image1, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        }, segmentModel);
+        toast.success(`Found ${segments.length} segment(s)`);
+        const labels = segments.map((s, i) => `${i + 1}. ${s.label} — ${(s.score * 100).toFixed(0)}%`).join("\n");
+        await saveToHistory("segment", "Segment", { type: "text", content: labels });
+        res = { type: "image", content: dataUrl, original: image1 };
+      } else if (activeTab === "upscaleAI") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading AI upscaler…");
+        setLoadingProgress(0);
+        const { upscaleAI } = await import("@/lib/extra-services");
+        const out = await upscaleAI(image1, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        }, upscaleAIModel);
+        res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "colorize") {
+        if (!image1) throw new Error("Upload an image first");
+        const { colorizeImage } = await import("@/lib/extra-services");
+        const out = await colorizeImage(image1, colorizeTone);
+        toast.success("Colorized (stylistic tone mapping)");
+        res = { type: "image", content: out, original: image1 };
       } else {
         // Server-side AI
         const body: Record<string, unknown> = { action: activeTab };
@@ -1162,6 +1227,78 @@ const Workspace = () => {
                       </p>
                     </div>
                   )}
+
+                  {t.id === "classify" && (
+                    <div className="rounded-md border p-3 bg-muted/30 space-y-2">
+                      <Label className="text-xs">Classifier model</Label>
+                      <Select value={classifyModel} onValueChange={setClassifyModel}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {CLASSIFY_MODELS.map((m) => (
+                            <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[11px] text-muted-foreground">
+                        ImageNet-1k labels. Runs locally via Transformers.js (WebGPU when available).
+                      </p>
+                    </div>
+                  )}
+
+                  {t.id === "segment" && (
+                    <div className="rounded-md border p-3 bg-muted/30 space-y-2">
+                      <Label className="text-xs">Segmentation model</Label>
+                      <Select value={segmentModel} onValueChange={setSegmentModel}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {SEGMENT_MODELS.map((m) => (
+                            <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[11px] text-muted-foreground">
+                        Each segment is overlaid with a distinct color. Labels are listed in history.
+                      </p>
+                    </div>
+                  )}
+
+                  {t.id === "upscaleAI" && (
+                    <div className="rounded-md border p-3 bg-muted/30 space-y-2">
+                      <Label className="text-xs">Upscaler model</Label>
+                      <Select value={upscaleAIModel} onValueChange={setUpscaleAIModel}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {UPSCALE_AI_MODELS.map((m) => (
+                            <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[11px] text-muted-foreground">
+                        Swin2SR family — x2 / x4 super-resolution. First run downloads weights (~50–150 MB).
+                      </p>
+                    </div>
+                  )}
+
+                  {t.id === "colorize" && (
+                    <div className="rounded-md border p-3 bg-muted/30 space-y-2">
+                      <Label className="text-xs">Tone palette</Label>
+                      <Select value={colorizeTone} onValueChange={(v) => setColorizeTone(v as any)}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="warm">Warm (skin/golden hour)</SelectItem>
+                          <SelectItem value="cool">Cool (blue night)</SelectItem>
+                          <SelectItem value="sepia">Sepia (vintage)</SelectItem>
+                          <SelectItem value="vibrant">Vibrant (split-tone)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[11px] text-muted-foreground">
+                        Stylistic luminance-based tone mapping for B&amp;W photos. Not ML-based — no widely-available
+                        colorization model ships on Transformers.js yet.
+                      </p>
+                    </div>
+                  )}
+
+
 
 
 
