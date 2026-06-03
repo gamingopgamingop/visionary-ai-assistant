@@ -78,6 +78,10 @@ const tabs: {
   { id: "fingerprint", label: "Fingerprint", icon: FingerprintIcon, needsImage: true },
   { id: "textOverlay", label: "Text Overlay", icon: Type, needsImage: true },
   { id: "metadata", label: "Metadata", icon: FileJson, needsImage: true },
+  { id: "segment", label: "Segment", icon: Boxes, needsImage: true },
+  { id: "classify", label: "Classify", icon: Tags, needsImage: true },
+  { id: "upscaleAI", label: "Upscale AI", icon: ArrowUpRightSquare, needsImage: true },
+  { id: "colorize", label: "Colorize", icon: Rainbow, needsImage: true },
   { id: "settings", label: "Settings", icon: SettingsIcon, needsImage: false },
 ];
 
