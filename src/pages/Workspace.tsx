@@ -1228,6 +1228,78 @@ const Workspace = () => {
                     </div>
                   )}
 
+                  {t.id === "classify" && (
+                    <div className="rounded-md border p-3 bg-muted/30 space-y-2">
+                      <Label className="text-xs">Classifier model</Label>
+                      <Select value={classifyModel} onValueChange={setClassifyModel}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {CLASSIFY_MODELS.map((m) => (
+                            <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[11px] text-muted-foreground">
+                        ImageNet-1k labels. Runs locally via Transformers.js (WebGPU when available).
+                      </p>
+                    </div>
+                  )}
+
+                  {t.id === "segment" && (
+                    <div className="rounded-md border p-3 bg-muted/30 space-y-2">
+                      <Label className="text-xs">Segmentation model</Label>
+                      <Select value={segmentModel} onValueChange={setSegmentModel}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {SEGMENT_MODELS.map((m) => (
+                            <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[11px] text-muted-foreground">
+                        Each segment is overlaid with a distinct color. Labels are listed in history.
+                      </p>
+                    </div>
+                  )}
+
+                  {t.id === "upscaleAI" && (
+                    <div className="rounded-md border p-3 bg-muted/30 space-y-2">
+                      <Label className="text-xs">Upscaler model</Label>
+                      <Select value={upscaleAIModel} onValueChange={setUpscaleAIModel}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {UPSCALE_AI_MODELS.map((m) => (
+                            <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[11px] text-muted-foreground">
+                        Swin2SR family — x2 / x4 super-resolution. First run downloads weights (~50–150 MB).
+                      </p>
+                    </div>
+                  )}
+
+                  {t.id === "colorize" && (
+                    <div className="rounded-md border p-3 bg-muted/30 space-y-2">
+                      <Label className="text-xs">Tone palette</Label>
+                      <Select value={colorizeTone} onValueChange={(v) => setColorizeTone(v as any)}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="warm">Warm (skin/golden hour)</SelectItem>
+                          <SelectItem value="cool">Cool (blue night)</SelectItem>
+                          <SelectItem value="sepia">Sepia (vintage)</SelectItem>
+                          <SelectItem value="vibrant">Vibrant (split-tone)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[11px] text-muted-foreground">
+                        Stylistic luminance-based tone mapping for B&amp;W photos. Not ML-based — no widely-available
+                        colorization model ships on Transformers.js yet.
+                      </p>
+                    </div>
+                  )}
+
+
+
 
 
 
