@@ -66,6 +66,20 @@ export const TRANSFORMER_MODELS = {
     { value: "Xenova/clip-vit-base-patch16", label: "CLIP ViT-B/16" },
     { value: "Xenova/siglip-base-patch16-224", label: "SigLIP Base" },
   ],
+  classify: [
+    { value: "Xenova/vit-base-patch16-224", label: "ViT Base (ImageNet)" },
+    { value: "Xenova/mobilenet_v2_1.0_224", label: "MobileNet v2" },
+    { value: "Xenova/resnet-50", label: "ResNet-50" },
+  ],
+  segment: [
+    { value: "Xenova/segformer-b0-finetuned-ade-512-512", label: "SegFormer B0 (ADE20K)" },
+    { value: "Xenova/segformer_b2_clothes", label: "SegFormer (clothes)" },
+  ],
+  upscaleAI: [
+    { value: "Xenova/swin2SR-compressed-sr-x4-48", label: "Swin2SR x4 (compressed)" },
+    { value: "Xenova/swin2SR-classical-sr-x2-64", label: "Swin2SR x2 (classical)" },
+    { value: "Xenova/swin2SR-lightweight-x2-64", label: "Swin2SR x2 (lightweight)" },
+  ],
 } as const;
 
 /** Depth estimation — returns a grayscale depth map data URL. */
