@@ -499,6 +499,43 @@ const Workspace = () => {
         const { dataUrl, bytes } = await stripMetadata(image1, metadataFormat);
         toast.success(`Re-encoded (EXIF stripped): ${(bytes / 1024).toFixed(1)} KB`);
         res = { type: "image", content: dataUrl, original: image1 };
+      } else if (activeTab === "classify") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading classifier…");
+        setLoadingProgress(0);
+        const { classifyImage } = await import("@/lib/extra-services");
+        const out = await classifyImage(image1, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        }, classifyModel, 5);
+        const text = out.map((o, i) => `${i + 1}. ${o.label} — ${(o.score * 100).toFixed(1)}%`).join("\n");
+        res = { type: "text", content: `Top predictions:\n${text}` };
+      } else if (activeTab === "segment") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading segmenter…");
+        setLoadingProgress(0);
+        const { segmentImage } = await import("@/lib/extra-services");
+        const { dataUrl, segments } = await segmentImage(image1, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        }, segmentModel);
+        toast.success(`Found ${segments.length} segment(s)`);
+        const labels = segments.map((s, i) => `${i + 1}. ${s.label} — ${(s.score * 100).toFixed(0)}%`).join("\n");
+        await saveToHistory("segment", "Segment", { type: "text", content: labels });
+        res = { type: "image", content: dataUrl, original: image1 };
+      } else if (activeTab === "upscaleAI") {
+        if (!image1) throw new Error("Upload an image first");
+        setLoadingMsg("Loading AI upscaler…");
+        setLoadingProgress(0);
+        const { upscaleAI } = await import("@/lib/extra-services");
+        const out = await upscaleAI(image1, ({ progress, message }) => {
+          setLoadingMsg(message); setLoadingProgress(progress);
+        }, upscaleAIModel);
+        res = { type: "image", content: out, original: image1 };
+      } else if (activeTab === "colorize") {
+        if (!image1) throw new Error("Upload an image first");
+        const { colorizeImage } = await import("@/lib/extra-services");
+        const out = await colorizeImage(image1, colorizeTone);
+        toast.success("Colorized (stylistic tone mapping)");
+        res = { type: "image", content: out, original: image1 };
       } else {
         // Server-side AI
         const body: Record<string, unknown> = { action: activeTab };
