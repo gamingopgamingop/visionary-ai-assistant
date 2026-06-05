@@ -18,6 +18,8 @@ import PromptParams, { DEFAULT_PROMPT_PARAMS, type PromptParamsValue } from "@/c
 import PromptPresetPicker from "@/components/PromptPresetPicker";
 import BatchBgRemove from "@/components/BatchBgRemove";
 import QuotaBar from "@/components/QuotaBar";
+import ToolErrorBoundary from "@/components/ToolErrorBoundary";
+import { useUndoRedo } from "@/hooks/useUndoRedo";
 import OnnxModelPicker, { type OnnxSelection } from "@/components/OnnxModelPicker";
 import FaviconPicker from "@/components/FaviconPicker";
 import { ONNX_MODELS } from "@/lib/onnx-models";
@@ -33,6 +35,7 @@ import {
   SlidersHorizontal, Filter, BarChart3, FileImage, EyeOff,
   Combine, GitCompareArrows, Fingerprint as FingerprintIcon, FileJson,
   Boxes, Tags, Rainbow, ArrowUpRightSquare,
+  Undo2, Redo2,
 } from "lucide-react";
 
 type TabId =
@@ -103,7 +106,11 @@ const wasmEffects: { value: WasmEffect; label: string }[] = [
 const Workspace = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = usePersistedState<TabId>("ait_ws_tab", "analyze");
-  const [image1, setImage1] = useState<string | null>(null);
+  const {
+    value: image1, set: setImage1,
+    undo: undoImage, redo: redoImage,
+    canUndo: canUndoImage, canRedo: canRedoImage,
+  } = useUndoRedo<string | null>(null, { enableShortcuts: true });
   const [image2, setImage2] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
@@ -612,6 +619,18 @@ const Workspace = () => {
             AI Image Toolkit
           </button>
           <div className="flex items-center gap-2">
+            <Button
+              size="icon" variant="ghost" onClick={undoImage} disabled={!canUndoImage}
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 className="h-4 w-4" />
+            </Button>
+            <Button
+              size="icon" variant="ghost" onClick={redoImage} disabled={!canRedoImage}
+              title="Redo (Ctrl+Shift+Z)"
+            >
+              <Redo2 className="h-4 w-4" />
+            </Button>
             <HistoryPanel refreshKey={historyKey} onRestore={handleRestore} />
             <ClerkAuth />
           </div>
@@ -638,6 +657,7 @@ const Workspace = () => {
 
           {tabs.map((t) => (
             <TabsContent key={t.id} value={t.id}>
+              <ToolErrorBoundary toolName={t.label} onReset={resetState}>
               <div className="grid gap-6 lg:grid-cols-2">
                 <div className="space-y-4">
                   {t.needsImage && (
@@ -1406,6 +1426,7 @@ const Workspace = () => {
                   />
                 )}
               </div>
+              </ToolErrorBoundary>
             </TabsContent>
           ))}
         </Tabs>
