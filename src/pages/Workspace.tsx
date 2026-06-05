@@ -619,6 +619,18 @@ const Workspace = () => {
             AI Image Toolkit
           </button>
           <div className="flex items-center gap-2">
+            <Button
+              size="icon" variant="ghost" onClick={undoImage} disabled={!canUndoImage}
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 className="h-4 w-4" />
+            </Button>
+            <Button
+              size="icon" variant="ghost" onClick={redoImage} disabled={!canRedoImage}
+              title="Redo (Ctrl+Shift+Z)"
+            >
+              <Redo2 className="h-4 w-4" />
+            </Button>
             <HistoryPanel refreshKey={historyKey} onRestore={handleRestore} />
             <ClerkAuth />
           </div>
