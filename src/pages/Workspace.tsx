@@ -657,6 +657,7 @@ const Workspace = () => {
 
           {tabs.map((t) => (
             <TabsContent key={t.id} value={t.id}>
+              <ToolErrorBoundary toolName={t.label} onReset={resetState}>
               <div className="grid gap-6 lg:grid-cols-2">
                 <div className="space-y-4">
                   {t.needsImage && (
