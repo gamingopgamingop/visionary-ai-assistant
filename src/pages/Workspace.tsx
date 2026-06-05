@@ -35,6 +35,7 @@ import {
   SlidersHorizontal, Filter, BarChart3, FileImage, EyeOff,
   Combine, GitCompareArrows, Fingerprint as FingerprintIcon, FileJson,
   Boxes, Tags, Rainbow, ArrowUpRightSquare,
+  Undo2, Redo2,
 } from "lucide-react";
 
 type TabId =
