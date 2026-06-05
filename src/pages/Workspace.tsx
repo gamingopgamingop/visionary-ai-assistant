@@ -18,6 +18,8 @@ import PromptParams, { DEFAULT_PROMPT_PARAMS, type PromptParamsValue } from "@/c
 import PromptPresetPicker from "@/components/PromptPresetPicker";
 import BatchBgRemove from "@/components/BatchBgRemove";
 import QuotaBar from "@/components/QuotaBar";
+import ToolErrorBoundary from "@/components/ToolErrorBoundary";
+import { useUndoRedo } from "@/hooks/useUndoRedo";
 import OnnxModelPicker, { type OnnxSelection } from "@/components/OnnxModelPicker";
 import FaviconPicker from "@/components/FaviconPicker";
 import { ONNX_MODELS } from "@/lib/onnx-models";
