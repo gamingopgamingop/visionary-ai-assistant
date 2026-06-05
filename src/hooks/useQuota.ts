@@ -2,9 +2,9 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/providers/AuthProvider";
 
-export type PlanName = "free" | "pro" | "enterprise";
+export type PlanName = "free" | "starter" | "pro" | "studio" | "enterprise";
 
-const LIMITS: Record<PlanName, number> = { free: 10, pro: 100, enterprise: Infinity };
+const LIMITS: Record<PlanName, number> = { free: 10, starter: 30, pro: 100, studio: 500, enterprise: Infinity };
 
 export function useQuota(action = "ai_generation") {
   const { userId, isSignedIn } = useCurrentUser();

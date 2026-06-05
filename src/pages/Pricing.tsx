@@ -25,6 +25,14 @@ const TIERS: Tier[] = [
     priceEnv: null,
   },
   {
+    name: "Starter", tagline: "For hobbyists", monthly: 4, yearly: 38,
+    features: ["30 AI generations / day", "All basic models", "History (30 days)", "Email support"],
+    priceEnv: {
+      monthly: import.meta.env.VITE_STRIPE_PRICE_STARTER_MONTHLY ?? "price_starter_monthly",
+      yearly: import.meta.env.VITE_STRIPE_PRICE_STARTER_YEARLY ?? "price_starter_yearly",
+    },
+  },
+  {
     name: "Pro", tagline: "For creators", monthly: 9, yearly: 86,
     features: ["100 AI generations / day", "All models incl. ONNX", "Full history", "Priority queue"],
     highlight: true,
@@ -34,8 +42,16 @@ const TIERS: Tier[] = [
     },
   },
   {
+    name: "Studio", tagline: "For teams", monthly: 19, yearly: 182,
+    features: ["500 AI generations / day", "Team workspace (5 seats)", "Shared collections", "Batch processing", "Priority support"],
+    priceEnv: {
+      monthly: import.meta.env.VITE_STRIPE_PRICE_STUDIO_MONTHLY ?? "price_studio_monthly",
+      yearly: import.meta.env.VITE_STRIPE_PRICE_STUDIO_YEARLY ?? "price_studio_yearly",
+    },
+  },
+  {
     name: "Enterprise", tagline: "Unlimited", monthly: 29, yearly: 278,
-    features: ["Unlimited generations", "Priority processing", "API access", "Custom models"],
+    features: ["Unlimited generations", "Priority processing", "API access", "Custom models", "SSO + SLA"],
     priceEnv: {
       monthly: import.meta.env.VITE_STRIPE_PRICE_ENTERPRISE_MONTHLY ?? "price_enterprise_monthly",
       yearly: import.meta.env.VITE_STRIPE_PRICE_ENTERPRISE_YEARLY ?? "price_enterprise_yearly",
@@ -76,7 +92,7 @@ export default function Pricing() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6 mt-12 max-w-5xl mx-auto">
+      <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-6 mt-12 max-w-7xl mx-auto">
         {TIERS.map((t) => {
           const price = yearly ? t.yearly : t.monthly;
           return (

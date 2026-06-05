@@ -17,6 +17,7 @@ import HistoryPanel from "@/components/HistoryPanel";
 import PromptParams, { DEFAULT_PROMPT_PARAMS, type PromptParamsValue } from "@/components/PromptParams";
 import PromptPresetPicker from "@/components/PromptPresetPicker";
 import BatchBgRemove from "@/components/BatchBgRemove";
+import QuotaBar from "@/components/QuotaBar";
 import OnnxModelPicker, { type OnnxSelection } from "@/components/OnnxModelPicker";
 import FaviconPicker from "@/components/FaviconPicker";
 import { ONNX_MODELS } from "@/lib/onnx-models";
@@ -618,6 +619,7 @@ const Workspace = () => {
       </header>
 
       <div className="container flex-1 py-6">
+        <div className="mb-4"><QuotaBar /></div>
         <Tabs
           value={activeTab}
           onValueChange={(v) => {
