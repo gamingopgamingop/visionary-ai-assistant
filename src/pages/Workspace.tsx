@@ -1426,6 +1426,7 @@ const Workspace = () => {
                   />
                 )}
               </div>
+              </ToolErrorBoundary>
             </TabsContent>
           ))}
         </Tabs>
