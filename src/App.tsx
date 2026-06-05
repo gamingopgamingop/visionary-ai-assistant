@@ -28,6 +28,7 @@ const App = () => (
             <Route path="/workspace" element={<Workspace />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/features" element={<Features />} />
+            <Route path="/pipelines" element={<Pipelines />} />
             <Route path="/callback" element={<Callback />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
