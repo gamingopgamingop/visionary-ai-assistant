@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Workspace from "./pages/Workspace";
 import Pricing from "./pages/Pricing";
 import Features from "./pages/Features";
+import Pipelines from "./pages/Pipelines";
 import Callback from "./pages/Callback";
 import NotFound from "./pages/NotFound";
 import Navbar from "@/components/Navbar";
