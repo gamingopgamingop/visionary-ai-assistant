@@ -135,7 +135,18 @@ export default function Pipelines() {
               <CardContent className="space-y-4">
                 <div>
                   <Label className="text-xs uppercase text-muted-foreground">Input image</Label>
-                  <div className="mt-2"><ImageUploader value={input} onChange={setInput} onClear={() => setInput(null)} /></div>
+                  <div className="mt-2">
+                    <ImageUploader
+                      label="Input image"
+                      image={input}
+                      onDrop={(file) => {
+                        const r = new FileReader();
+                        r.onload = () => setInput(r.result as string);
+                        r.readAsDataURL(file);
+                      }}
+                      onClear={() => setInput(null)}
+                    />
+                  </div>
                 </div>
 
                 <div>
