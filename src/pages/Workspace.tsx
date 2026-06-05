@@ -106,7 +106,11 @@ const wasmEffects: { value: WasmEffect; label: string }[] = [
 const Workspace = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = usePersistedState<TabId>("ait_ws_tab", "analyze");
-  const [image1, setImage1] = useState<string | null>(null);
+  const {
+    value: image1, set: setImage1,
+    undo: undoImage, redo: redoImage,
+    canUndo: canUndoImage, canRedo: canRedoImage,
+  } = useUndoRedo<string | null>(null, { enableShortcuts: true });
   const [image2, setImage2] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
