@@ -618,6 +618,7 @@ const Workspace = () => {
       </header>
 
       <div className="container flex-1 py-6">
+        <div className="mb-4"><QuotaBar /></div>
         <Tabs
           value={activeTab}
           onValueChange={(v) => {
