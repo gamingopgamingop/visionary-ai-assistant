@@ -25,11 +25,27 @@ const TIERS: Tier[] = [
     priceEnv: null,
   },
   {
+    name: "Lite", tagline: "Casual use", monthly: 2, yearly: 19,
+    features: ["20 AI generations / day", "Basic models", "History (7 days)"],
+    priceEnv: {
+      monthly: import.meta.env.VITE_STRIPE_PRICE_LITE_MONTHLY ?? "price_lite_monthly",
+      yearly: import.meta.env.VITE_STRIPE_PRICE_LITE_YEARLY ?? "price_lite_yearly",
+    },
+  },
+  {
     name: "Starter", tagline: "For hobbyists", monthly: 4, yearly: 38,
     features: ["30 AI generations / day", "All basic models", "History (30 days)", "Email support"],
     priceEnv: {
       monthly: import.meta.env.VITE_STRIPE_PRICE_STARTER_MONTHLY ?? "price_starter_monthly",
       yearly: import.meta.env.VITE_STRIPE_PRICE_STARTER_YEARLY ?? "price_starter_yearly",
+    },
+  },
+  {
+    name: "Plus", tagline: "Power user", monthly: 6, yearly: 58,
+    features: ["60 AI generations / day", "All models", "Preset pipelines", "Session history sync"],
+    priceEnv: {
+      monthly: import.meta.env.VITE_STRIPE_PRICE_PLUS_MONTHLY ?? "price_plus_monthly",
+      yearly: import.meta.env.VITE_STRIPE_PRICE_PLUS_YEARLY ?? "price_plus_yearly",
     },
   },
   {
