@@ -104,7 +104,7 @@ export function savePipeline(p: Pipeline) {
   const all = listPipelines();
   const idx = all.findIndex((x) => x.id === p.id);
   if (idx >= 0) all[idx] = { ...p, updatedAt: Date.now() };
-  else all.push(p);
+  else all.push({ ...p, updatedAt: Date.now() });
   localStorage.setItem(KEY, JSON.stringify(all));
 }
 
@@ -116,19 +116,104 @@ export function newPipeline(name = "Untitled pipeline"): Pipeline {
   return { id: crypto.randomUUID(), name, steps: [], createdAt: Date.now(), updatedAt: Date.now() };
 }
 
+/** Built-in starter templates. Users can clone and customise. */
+export interface PipelineTemplate {
+  id: string;
+  name: string;
+  description: string;
+  steps: Omit<PipelineStep, "id">[];
+}
+
+export const TEMPLATES: PipelineTemplate[] = [
+  {
+    id: "web-optimize",
+    name: "Web optimize",
+    description: "Resize to 1600px wide and re-encode as quality-85 WebP.",
+    steps: [
+      { opId: "resize", params: { width: 1600, height: 0 } },
+      { opId: "convert", params: { format: "image/webp", quality: 0.85 } },
+    ],
+  },
+  {
+    id: "social-square",
+    name: "Social square",
+    description: "1080×1080 JPEG, ready for Instagram / LinkedIn.",
+    steps: [
+      { opId: "resize", params: { width: 1080, height: 1080 } },
+      { opId: "convert", params: { format: "image/jpeg", quality: 0.9 } },
+    ],
+  },
+  {
+    id: "thumbnail",
+    name: "Thumbnail",
+    description: "Tiny 320px preview as WebP.",
+    steps: [
+      { opId: "resize", params: { width: 320, height: 0 } },
+      { opId: "convert", params: { format: "image/webp", quality: 0.8 } },
+    ],
+  },
+  {
+    id: "cutout",
+    name: "Background cutout",
+    description: "Remove background then export as PNG with transparency.",
+    steps: [
+      { opId: "bgRemove", params: {} },
+      { opId: "convert", params: { format: "image/png", quality: 1 } },
+    ],
+  },
+  {
+    id: "noir",
+    name: "Noir",
+    description: "Grayscale + compressed WebP.",
+    steps: [
+      { opId: "wasm", params: { effect: "grayscale" } },
+      { opId: "convert", params: { format: "image/webp", quality: 0.85 } },
+    ],
+  },
+];
+
+export function pipelineFromTemplate(t: PipelineTemplate): Pipeline {
+  return {
+    id: crypto.randomUUID(),
+    name: t.name,
+    description: t.description,
+    steps: t.steps.map((s) => ({ ...s, id: crypto.randomUUID(), params: { ...s.params } })),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+}
+
+export class PipelineCancelled extends Error {
+  constructor() { super("Pipeline cancelled"); this.name = "PipelineCancelled"; }
+}
+
+export interface RunOptions {
+  signal?: AbortSignal;
+  onStep?: (i: number, total: number, op: OpDescriptor) => void;
+  onProgress?: (msg: string) => void;
+}
+
 export async function runPipeline(
   pipeline: Pipeline,
   input: string,
-  onStep?: (i: number, total: number, op: OpDescriptor) => void,
-  onProgress?: (msg: string) => void,
+  optsOrOnStep?: RunOptions | ((i: number, total: number, op: OpDescriptor) => void),
+  legacyOnProgress?: (msg: string) => void,
 ): Promise<string> {
+  // Back-compat: callers used to pass (onStep, onProgress).
+  const opts: RunOptions =
+    typeof optsOrOnStep === "function"
+      ? { onStep: optsOrOnStep, onProgress: legacyOnProgress }
+      : optsOrOnStep ?? {};
+
   let current = input;
   for (let i = 0; i < pipeline.steps.length; i++) {
+    if (opts.signal?.aborted) throw new PipelineCancelled();
     const step = pipeline.steps[i];
     const op = OP_MAP[step.opId];
     if (!op) continue;
-    onStep?.(i, pipeline.steps.length, op);
-    current = await op.run(current, step.params, onProgress);
+    opts.onStep?.(i, pipeline.steps.length, op);
+    current = await op.run(current, step.params, opts.onProgress);
   }
+  if (opts.signal?.aborted) throw new PipelineCancelled();
   return current;
 }
