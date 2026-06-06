@@ -101,15 +101,17 @@ function diff(a: ImageBitmap, b: ImageBitmap, threshold = 20) {
 
 self.onmessage = async (e: MessageEvent<Job>) => {
   const { id, op, payload } = e.data;
+  const post = (extra: Record<string, unknown>) => (self as any).postMessage({ id, ...extra });
+  const progress = (msg: string, pct?: number) => post({ progress: { msg, pct } });
   try {
     let result: any;
-    if (op === "palette") result = palette(payload.bitmap, payload.k);
-    else if (op === "phash") result = phash(payload.bitmap);
-    else if (op === "diff") result = diff(payload.a, payload.b, payload.threshold);
+    if (op === "palette") { progress("Sampling pixels", 0.2); result = palette(payload.bitmap, payload.k); progress("Done", 1); }
+    else if (op === "phash") { progress("Hashing", 0.4); result = phash(payload.bitmap); progress("Done", 1); }
+    else if (op === "diff") { progress("Diffing", 0.3); result = diff(payload.a, payload.b, payload.threshold); progress("Done", 1); }
     else throw new Error(`Unknown op: ${op}`);
-    (self as any).postMessage({ id, ok: true, result });
+    post({ ok: true, result });
   } catch (err) {
-    (self as any).postMessage({ id, ok: false, error: (err as Error).message });
+    post({ ok: false, error: (err as Error).message });
   }
 };
 

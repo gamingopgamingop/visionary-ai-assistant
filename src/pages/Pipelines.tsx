@@ -1,18 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Play, GripVertical, Save } from "lucide-react";
+import { Plus, Trash2, Play, GripVertical, Save, Square, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import ImageUploader from "@/components/ImageUploader";
 import ToolErrorBoundary from "@/components/ToolErrorBoundary";
 import {
   listPipelines, savePipeline, deletePipeline, newPipeline, runPipeline, OPS, OP_MAP,
+  TEMPLATES, pipelineFromTemplate, PipelineCancelled,
   type Pipeline, type PipelineStep,
 } from "@/lib/pipeline";
+import { addHistory } from "@/lib/history";
 
 export default function Pipelines() {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
@@ -21,6 +24,9 @@ export default function Pipelines() {
   const [output, setOutput] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState<string>("");
+  const [pct, setPct] = useState(0);
+  const dragId = useRef<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => { setPipelines(listPipelines()); }, []);
 
@@ -29,6 +35,14 @@ export default function Pipelines() {
   const create = () => {
     const p = newPipeline(`Pipeline ${pipelines.length + 1}`);
     savePipeline(p); refresh(); setCurrent(p);
+  };
+
+  const useTemplate = (templateId: string) => {
+    const t = TEMPLATES.find((x) => x.id === templateId);
+    if (!t) return;
+    const p = pipelineFromTemplate(t);
+    savePipeline(p); refresh(); setCurrent(p);
+    toast.success(`Loaded template: ${t.name}`);
   };
 
   const save = () => {
@@ -65,6 +79,18 @@ export default function Pipelines() {
     setCurrent({ ...current, steps });
   };
 
+  const onDrop = (targetId: string) => {
+    if (!current || !dragId.current || dragId.current === targetId) return;
+    const steps = [...current.steps];
+    const from = steps.findIndex((s) => s.id === dragId.current);
+    const to = steps.findIndex((s) => s.id === targetId);
+    if (from < 0 || to < 0) return;
+    const [moved] = steps.splice(from, 1);
+    steps.splice(to, 0, moved);
+    setCurrent({ ...current, steps });
+    dragId.current = null;
+  };
+
   const updateParam = (stepId: string, key: string, value: any) => {
     if (!current) return;
     setCurrent({
@@ -73,21 +99,50 @@ export default function Pipelines() {
     });
   };
 
+  const cancel = () => {
+    abortRef.current?.abort();
+    setProgress("Cancelling…");
+  };
+
   const run = async () => {
     if (!current || !input) { toast.error("Pick an image and pipeline first"); return; }
-    setRunning(true); setOutput(null); setProgress("Starting…");
+    setRunning(true); setOutput(null); setProgress("Starting…"); setPct(0);
+    const ac = new AbortController();
+    abortRef.current = ac;
     try {
-      const result = await runPipeline(
-        current,
-        input,
-        (i, total, op) => setProgress(`Step ${i + 1}/${total}: ${op.label}`),
-        (msg) => setProgress(msg),
-      );
+      const total = current.steps.length || 1;
+      const result = await runPipeline(current, input, {
+        signal: ac.signal,
+        onStep: (i, t, op) => {
+          setProgress(`Step ${i + 1}/${t}: ${op.label}`);
+          setPct(Math.round((i / t) * 100));
+        },
+        onProgress: (msg) => setProgress(msg),
+      });
       setOutput(result);
+      setPct(100);
       toast.success("Pipeline complete");
+      // Persist to session history
+      try {
+        await addHistory({
+          tool: "pipeline",
+          toolLabel: `Pipeline: ${current.name}`,
+          resultType: "image",
+          fullResult: result,
+          prompt: current.steps.map((s) => OP_MAP[s.opId]?.label ?? s.opId).join(" → "),
+        });
+      } catch { /* ignore quota */ }
     } catch (e) {
-      toast.error((e as Error).message);
-    } finally { setRunning(false); setProgress(""); }
+      if (e instanceof PipelineCancelled || (e as any)?.name === "AbortError") {
+        toast.info("Pipeline cancelled");
+      } else {
+        toast.error((e as Error).message);
+      }
+    } finally {
+      setRunning(false);
+      setProgress("");
+      abortRef.current = null;
+    }
   };
 
   return (
@@ -95,16 +150,34 @@ export default function Pipelines() {
       <div className="flex items-end justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Preset Pipelines</h1>
-          <p className="text-muted-foreground mt-1">Chain operations into reusable presets.</p>
+          <p className="text-muted-foreground mt-1">Chain operations into reusable presets. Results auto-save to history.</p>
         </div>
-        <Button onClick={create}><Plus className="h-4 w-4 mr-2" />New pipeline</Button>
+        <div className="flex gap-2">
+          <Select onValueChange={useTemplate}>
+            <SelectTrigger className="w-[200px]">
+              <Sparkles className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Load template…" />
+            </SelectTrigger>
+            <SelectContent>
+              {TEMPLATES.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{t.name}</span>
+                    <span className="text-xs text-muted-foreground">{t.description}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={create}><Plus className="h-4 w-4 mr-2" />New pipeline</Button>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-[260px_1fr] gap-6">
         <Card>
           <CardHeader><CardTitle className="text-base">Saved</CardTitle></CardHeader>
           <CardContent className="space-y-1">
-            {pipelines.length === 0 && <p className="text-sm text-muted-foreground">No pipelines yet.</p>}
+            {pipelines.length === 0 && <p className="text-sm text-muted-foreground">No pipelines yet. Try a template above.</p>}
             {pipelines.map((p) => (
               <div key={p.id} className={`flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-accent ${current?.id === p.id ? "bg-accent" : ""}`}>
                 <button onClick={() => setCurrent(p)} className="text-sm text-left flex-1 truncate">{p.name}</button>
@@ -114,9 +187,9 @@ export default function Pipelines() {
           </CardContent>
         </Card>
 
-        <ToolErrorBoundary toolName="Pipeline editor">
+        <ToolErrorBoundary toolName="Pipeline editor" onReset={() => { setOutput(null); setProgress(""); setPct(0); }}>
           {!current ? (
-            <Card><CardContent className="py-16 text-center text-muted-foreground">Select or create a pipeline.</CardContent></Card>
+            <Card><CardContent className="py-16 text-center text-muted-foreground">Select, create, or load a template to get started.</CardContent></Card>
           ) : (
             <Card>
               <CardHeader className="flex-row items-center justify-between space-y-0">
@@ -127,9 +200,15 @@ export default function Pipelines() {
                 />
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" onClick={save}><Save className="h-4 w-4 mr-1.5" />Save</Button>
-                  <Button size="sm" onClick={run} disabled={running || !input}>
-                    <Play className="h-4 w-4 mr-1.5" />{running ? "Running…" : "Run"}
-                  </Button>
+                  {running ? (
+                    <Button size="sm" variant="destructive" onClick={cancel}>
+                      <Square className="h-4 w-4 mr-1.5" />Cancel
+                    </Button>
+                  ) : (
+                    <Button size="sm" onClick={run} disabled={!input}>
+                      <Play className="h-4 w-4 mr-1.5" />Run
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -150,14 +229,21 @@ export default function Pipelines() {
                 </div>
 
                 <div>
-                  <Label className="text-xs uppercase text-muted-foreground">Steps</Label>
+                  <Label className="text-xs uppercase text-muted-foreground">Steps (drag to reorder)</Label>
                   <div className="mt-2 space-y-2">
                     {current.steps.length === 0 && <p className="text-sm text-muted-foreground">No steps yet. Add one below.</p>}
                     {current.steps.map((step, i) => {
                       const op = OP_MAP[step.opId];
                       return (
-                        <div key={step.id} className="rounded-md border p-3 flex items-start gap-3">
-                          <div className="flex flex-col gap-1 pt-1">
+                        <div
+                          key={step.id}
+                          draggable
+                          onDragStart={() => { dragId.current = step.id; }}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={() => onDrop(step.id)}
+                          className="rounded-md border p-3 flex items-start gap-3 bg-card hover:border-primary/40 transition-colors"
+                        >
+                          <div className="flex flex-col gap-1 pt-1 cursor-grab active:cursor-grabbing select-none">
                             <button onClick={() => moveStep(step.id, -1)} className="text-xs text-muted-foreground hover:text-foreground">▲</button>
                             <GripVertical className="h-4 w-4 text-muted-foreground" />
                             <button onClick={() => moveStep(step.id, 1)} className="text-xs text-muted-foreground hover:text-foreground">▼</button>
@@ -203,7 +289,12 @@ export default function Pipelines() {
                   </Select>
                 </div>
 
-                {progress && <p className="text-sm text-muted-foreground">{progress}</p>}
+                {(running || progress) && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">{progress}</p>
+                    <Progress value={pct} />
+                  </div>
+                )}
 
                 {output && (
                   <div>

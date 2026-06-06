@@ -25,11 +25,27 @@ const TIERS: Tier[] = [
     priceEnv: null,
   },
   {
+    name: "Lite", tagline: "Casual use", monthly: 2, yearly: 19,
+    features: ["20 AI generations / day", "Basic models", "History (7 days)"],
+    priceEnv: {
+      monthly: import.meta.env.VITE_STRIPE_PRICE_LITE_MONTHLY ?? "price_lite_monthly",
+      yearly: import.meta.env.VITE_STRIPE_PRICE_LITE_YEARLY ?? "price_lite_yearly",
+    },
+  },
+  {
     name: "Starter", tagline: "For hobbyists", monthly: 4, yearly: 38,
     features: ["30 AI generations / day", "All basic models", "History (30 days)", "Email support"],
     priceEnv: {
       monthly: import.meta.env.VITE_STRIPE_PRICE_STARTER_MONTHLY ?? "price_starter_monthly",
       yearly: import.meta.env.VITE_STRIPE_PRICE_STARTER_YEARLY ?? "price_starter_yearly",
+    },
+  },
+  {
+    name: "Plus", tagline: "Power user", monthly: 6, yearly: 58,
+    features: ["60 AI generations / day", "All models", "Preset pipelines", "Session history sync"],
+    priceEnv: {
+      monthly: import.meta.env.VITE_STRIPE_PRICE_PLUS_MONTHLY ?? "price_plus_monthly",
+      yearly: import.meta.env.VITE_STRIPE_PRICE_PLUS_YEARLY ?? "price_plus_yearly",
     },
   },
   {
@@ -92,7 +108,7 @@ export default function Pricing() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-6 mt-12 max-w-7xl mx-auto">
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 mt-12 max-w-[1400px] mx-auto">
         {TIERS.map((t) => {
           const price = yearly ? t.yearly : t.monthly;
           return (
