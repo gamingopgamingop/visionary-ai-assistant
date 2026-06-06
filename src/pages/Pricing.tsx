@@ -108,7 +108,7 @@ export default function Pricing() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-6 mt-12 max-w-7xl mx-auto">
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 mt-12 max-w-[1400px] mx-auto">
         {TIERS.map((t) => {
           const price = yearly ? t.yearly : t.monthly;
           return (
