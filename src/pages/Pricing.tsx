@@ -96,6 +96,26 @@ export default function Pricing() {
     } finally { setBusy(null); }
   };
 
+  const oneOff = async (opts: { amount: number; productName: string; key: string; metadata?: Record<string, string> }) => {
+    if (!isSignedIn || !userId) { toast.error("Sign in first"); return; }
+    setBusy(opts.key);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: {
+          amount: opts.amount,
+          productName: opts.productName,
+          userId,
+          email,
+          metadata: opts.metadata,
+        },
+      });
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url;
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally { setBusy(null); }
+  };
+
   return (
     <main className="container py-16">
       <div className="text-center max-w-2xl mx-auto">
@@ -142,6 +162,90 @@ export default function Pricing() {
           );
         })}
       </div>
+
+      {/* Lifetime + Team */}
+      <div className="mt-20 max-w-5xl mx-auto">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold">One-time & team plans</h2>
+          <p className="text-muted-foreground mt-2">No monthly commitment — pay once or scale a team.</p>
+        </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card className="ring-2 ring-primary/50 relative">
+            <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Best value</Badge>
+            <CardHeader>
+              <CardTitle>Lifetime</CardTitle>
+              <CardDescription>One payment. Forever access.</CardDescription>
+              <div className="pt-3">
+                <span className="text-4xl font-bold">$199</span>
+                <span className="text-muted-foreground"> once</span>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ul className="space-y-2 text-sm">
+                {["Everything in Pro, forever", "100 AI generations / day", "All future updates included", "No recurring charges"].map((f) => (
+                  <li key={f} className="flex gap-2"><Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />{f}</li>
+                ))}
+              </ul>
+              <Button className="w-full" disabled={busy === "lifetime"} onClick={() => oneOff({ amount: 199, productName: "Lifetime Pro access", key: "lifetime", metadata: { type: "lifetime" } })}>
+                {busy === "lifetime" ? "Loading…" : "Get lifetime access"}
+              </Button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Team / Agency</CardTitle>
+              <CardDescription>Between Studio and Enterprise.</CardDescription>
+              <div className="pt-3">
+                <span className="text-4xl font-bold">$79</span>
+                <span className="text-muted-foreground">/mo</span>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ul className="space-y-2 text-sm">
+                {["1,500 AI generations / day", "Up to 15 seats", "Shared team workspace", "Central billing & usage", "Priority support"].map((f) => (
+                  <li key={f} className="flex gap-2"><Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />{f}</li>
+                ))}
+              </ul>
+              <Button className="w-full" disabled={busy === "team"} onClick={() => oneOff({ amount: 79, productName: "Team plan (monthly)", key: "team", metadata: { type: "team" } })}>
+                {busy === "team" ? "Loading…" : "Start Team plan"}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Pay-as-you-go credit packs */}
+      <div className="mt-20 max-w-5xl mx-auto">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold">Pay-as-you-go credit packs</h2>
+          <p className="text-muted-foreground mt-2">No subscription. Buy generations when you need them. Credits never expire.</p>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-4">
+          {[
+            { credits: 100, price: 5, key: "payg-100" },
+            { credits: 500, price: 20, key: "payg-500", badge: "Popular" },
+            { credits: 1000, price: 35, key: "payg-1000", badge: "Best rate" },
+          ].map((pack) => (
+            <Card key={pack.key} className={pack.badge ? "ring-2 ring-primary/50 relative" : ""}>
+              {pack.badge && <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">{pack.badge}</Badge>}
+              <CardHeader>
+                <CardTitle>{pack.credits} credits</CardTitle>
+                <CardDescription>${(pack.price / pack.credits).toFixed(3)} per generation</CardDescription>
+                <div className="pt-3">
+                  <span className="text-4xl font-bold">${pack.price}</span>
+                  <span className="text-muted-foreground"> once</span>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full" disabled={busy === pack.key} onClick={() => oneOff({ amount: pack.price, productName: `${pack.credits} AI credits`, key: pack.key, metadata: { type: "payg_credits", credits: String(pack.credits) } })}>
+                  {busy === pack.key ? "Loading…" : `Buy ${pack.credits} credits`}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
     </main>
   );
 }
+

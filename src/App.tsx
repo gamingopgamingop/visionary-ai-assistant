@@ -8,6 +8,7 @@ import Workspace from "./pages/Workspace";
 import Pricing from "./pages/Pricing";
 import Features from "./pages/Features";
 import Pipelines from "./pages/Pipelines";
+import Donations from "./pages/Donations";
 import Callback from "./pages/Callback";
 import NotFound from "./pages/NotFound";
 import Navbar from "@/components/Navbar";
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/features" element={<Features />} />
             <Route path="/pipelines" element={<Pipelines />} />
+            <Route path="/donate" element={<Donations />} />
             <Route path="/callback" element={<Callback />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
