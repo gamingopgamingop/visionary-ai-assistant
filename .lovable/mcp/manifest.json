@@ -1,0 +1,205 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "ai-image-toolkit-mcp",
+      "version": "0.1.0",
+      "title": "AI Image Toolkit"
+    },
+    "tools": [
+      {
+        "name": "analyze_image",
+        "title": "Analyze image",
+        "description": "Describe an image in detail: subject, colors, mood, composition, notable features.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "image_url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Public URL of the image to analyze."
+            }
+          },
+          "required": [
+            "image_url"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "detect_objects",
+        "title": "Detect objects",
+        "description": "List distinct objects identified in an image with their location/context.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "image_url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Public URL of the image."
+            }
+          },
+          "required": [
+            "image_url"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "ocr_image",
+        "title": "OCR image",
+        "description": "Extract all visible text from an image, preserving formatting where possible.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "image_url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Public URL of the image."
+            }
+          },
+          "required": [
+            "image_url"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "image_to_prompt",
+        "title": "Image to prompt",
+        "description": "Generate a detailed text-to-image prompt that would recreate the given image.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "image_url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Public URL of the image."
+            }
+          },
+          "required": [
+            "image_url"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "compare_images",
+        "title": "Compare images",
+        "description": "Compare two images and describe their similarities and differences.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "image_url_a": {
+              "type": "string",
+              "format": "uri",
+              "description": "Public URL of the first image."
+            },
+            "image_url_b": {
+              "type": "string",
+              "format": "uri",
+              "description": "Public URL of the second image."
+            }
+          },
+          "required": [
+            "image_url_a",
+            "image_url_b"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "generate_image",
+        "title": "Generate image",
+        "description": "Generate an image from a text prompt. Returns an image data URL.",
+        "annotations": {
+          "readOnlyHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Text description of the image to generate."
+            },
+            "style": {
+              "type": "string",
+              "enum": [
+                "none",
+                "photorealistic",
+                "cinematic",
+                "anime",
+                "oil_painting",
+                "watercolor",
+                "3d_render",
+                "pixel_art",
+                "line_art",
+                "minimalist"
+              ],
+              "description": "Optional artistic style."
+            },
+            "aspect": {
+              "type": "string",
+              "enum": [
+                "1:1",
+                "16:9",
+                "9:16",
+                "4:3",
+                "3:4"
+              ],
+              "description": "Optional aspect ratio."
+            }
+          },
+          "required": [
+            "prompt"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
