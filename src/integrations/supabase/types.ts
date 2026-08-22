@@ -14,6 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
+      gallery_items: {
+        Row: {
+          bytes: number | null
+          created_at: string
+          description: string | null
+          height: number | null
+          id: string
+          is_public: boolean
+          storage_path: string
+          tags: string[]
+          title: string
+          tool: string | null
+          updated_at: string
+          user_id: string
+          views: number
+          width: number | null
+        }
+        Insert: {
+          bytes?: number | null
+          created_at?: string
+          description?: string | null
+          height?: number | null
+          id?: string
+          is_public?: boolean
+          storage_path: string
+          tags?: string[]
+          title?: string
+          tool?: string | null
+          updated_at?: string
+          user_id: string
+          views?: number
+          width?: number | null
+        }
+        Update: {
+          bytes?: number | null
+          created_at?: string
+          description?: string | null
+          height?: number | null
+          id?: string
+          is_public?: boolean
+          storage_path?: string
+          tags?: string[]
+          title?: string
+          tool?: string | null
+          updated_at?: string
+          user_id?: string
+          views?: number
+          width?: number | null
+        }
+        Relationships: []
+      }
+      rate_limits: {
+        Row: {
+          bucket: string
+          count: number
+          id: string
+          subject: string
+          window_start: string
+        }
+        Insert: {
+          bucket: string
+          count?: number
+          id?: string
+          subject: string
+          window_start: string
+        }
+        Update: {
+          bucket?: string
+          count?: number
+          id?: string
+          subject?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      share_links: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          item_id: string
+          max_views: number | null
+          revoked: boolean
+          token: string
+          user_id: string
+          views: number
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          item_id: string
+          max_views?: number | null
+          revoked?: boolean
+          token: string
+          user_id: string
+          views?: number
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          item_id?: string
+          max_views?: number | null
+          revoked?: boolean
+          token?: string
+          user_id?: string
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_links_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "gallery_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usage_tracking: {
         Row: {
           action: string
@@ -65,15 +184,55 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      bump_rate_limit: {
+        Args: {
+          _bucket: string
+          _limit: number
+          _subject: string
+          _window_seconds: number
+        }
+        Returns: {
+          allowed: boolean
+          current_count: number
+          reset_at: string
+        }[]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -200,6 +359,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
