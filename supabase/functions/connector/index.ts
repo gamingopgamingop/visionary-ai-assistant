@@ -2,7 +2,6 @@
 // @ts-ignore: Deno URL import
 import { createClient } from "@supabase/supabase-js";
 // @ts-ignore
-
 import { verifyToken } from "@clerk/backend";
 const sb = createClient(
   Deno.env.get("SUPABASE_URL")!,
