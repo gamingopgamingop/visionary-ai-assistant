@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2",
+    "@clerk/backend": "npm:@clerk/backend@3"
+  }
+}

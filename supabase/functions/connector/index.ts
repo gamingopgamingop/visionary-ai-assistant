@@ -1,7 +1,9 @@
 // supabase/functions/connector/index.ts
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { verifyToken } from "https://esm.sh/@clerk/backend";
+// @ts-ignore: Deno URL import
+import { createClient } from "@supabase/supabase-js";
+// @ts-ignore
 
+import { verifyToken } from "@clerk/backend";
 const sb = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
