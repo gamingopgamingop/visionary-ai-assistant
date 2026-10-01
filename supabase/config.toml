@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.mcp]
 verify_jwt = false
+
+[functions.connector]
+verify_jwt = false
