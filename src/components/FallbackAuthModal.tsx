@@ -46,15 +46,14 @@ export default function FallbackAuthModal({
   };
 
   const social = async (provider: string) => {
+    const oidc = oidcProviders().find((p) => p.id === provider);
+    if (oidc) { await startOidcLogin(oidc.id); return; }
     if (provider !== "google") {
-      toast.info(`${provider} needs Logto/Auth0/FusionAuth env vars wired up.`);
+      toast.info(`${provider} is not configured. Set its VITE_*_ISSUER and VITE_*_CLIENT_ID.`);
       return;
     }
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google" as never,
-      options: { redirectTo: `${window.location.origin}/callback` },
-    });
-    if (error) toast.error(error.message);
+    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+    if (result.error) toast.error(String((result.error as Error).message ?? result.error));
   };
 
   return (
