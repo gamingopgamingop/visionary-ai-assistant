@@ -1,0 +1,311 @@
+import type { ConnectorConfig, AuthConfig, OAuth2Config, RateLimitConfig, PermissionConfig } from "../../types.ts";
+
+export const githubConfig: ConnectorConfig = {
+  type: "github",
+  name: "github",
+  displayName: "GitHub",
+  description: "Connect to GitHub to manage repositories, issues, pull requests, and more",
+  version: "1.0.0",
+  auth: {
+    type: "oauth2",
+    oauth2: {
+      authorizationUrl: "https://github.com/login/oauth/authorize",
+      tokenUrl: "https://github.com/login/oauth/access_token",
+      clientId: Deno.env.get("GITHUB_CLIENT_ID") || "",
+      clientSecret: Deno.env.get("GITHUB_CLIENT_SECRET") || "",
+      scopes: ["repo", "user", "read:org", "read:user", "workflow"],
+      redirectUri: Deno.env.get("GITHUB_REDIRECT_URI") || "",
+      pkce: true,
+    },
+  } as AuthConfig,
+  baseUrl: "https://api.github.com",
+  endpoints: {
+    getUser: {
+      method: "GET",
+      path: "/user",
+      description: "Get authenticated user",
+      authRequired: true,
+    },
+    getRepositories: {
+      method: "GET",
+      path: "/user/repos",
+      description: "List repositories for authenticated user",
+      authRequired: true,
+      parameters: [
+        { name: "type", in: "query", required: false, type: "string", enum: ["all", "owner", "member"] },
+        { name: "sort", in: "query", required: false, type: "string", enum: ["created", "updated", "pushed", "full_name"] },
+        { name: "direction", in: "query", required: false, type: "string", enum: ["asc", "desc"] },
+        { name: "per_page", in: "query", required: false, type: "number" },
+        { name: "page", in: "query", required: false, type: "number" },
+      ],
+    },
+    getRepository: {
+      method: "GET",
+      path: "/repos/{owner}/{repo}",
+      description: "Get a repository",
+      authRequired: true,
+      parameters: [
+        { name: "owner", in: "path", required: true, type: "string" },
+        { name: "repo", in: "path", required: true, type: "string" },
+      ],
+    },
+    createRepository: {
+      method: "POST",
+      path: "/user/repos",
+      description: "Create a new repository",
+      authRequired: true,
+      requestBody: {
+        contentType: "application/json",
+        required: true,
+        schema: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            description: { type: "string" },
+            private: { type: "boolean" },
+            auto_init: { type: "boolean" },
+          },
+          required: ["name"],
+        },
+      },
+    },
+    getIssues: {
+      method: "GET",
+      path: "/repos/{owner}/{repo}/issues",
+      description: "List repository issues",
+      authRequired: true,
+      parameters: [
+        { name: "owner", in: "path", required: true, type: "string" },
+        { name: "repo", in: "path", required: true, type: "string" },
+        { name: "state", in: "query", required: false, type: "string", enum: ["open", "closed", "all"] },
+        { name: "labels", in: "query", required: false, type: "string" },
+        { name: "sort", in: "query", required: false, type: "string", enum: ["created", "updated", "comments"] },
+        { name: "direction", in: "query", required: false, type: "string", enum: ["asc", "desc"] },
+        { name: "per_page", in: "query", required: false, type: "number" },
+        { name: "page", in: "query", required: false, type: "number" },
+      ],
+    },
+    getIssue: {
+      method: "GET",
+      path: "/repos/{owner}/{repo}/issues/{issue_number}",
+      description: "Get a single issue",
+      authRequired: true,
+      parameters: [
+        { name: "owner", in: "path", required: true, type: "string" },
+        { name: "repo", in: "path", required: true, type: "string" },
+        { name: "issue_number", in: "path", required: true, type: "number" },
+      ],
+    },
+    createIssue: {
+      method: "POST",
+      path: "/repos/{owner}/{repo}/issues",
+      description: "Create an issue",
+      authRequired: true,
+      parameters: [
+        { name: "owner", in: "path", required: true, type: "string" },
+        { name: "repo", in: "path", required: true, type: "string" },
+      ],
+      requestBody: {
+        contentType: "application/json",
+        required: true,
+        schema: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            body: { type: "string" },
+            assignees: { type: "array", items: { type: "string" } },
+            labels: { type: "array", items: { type: "string" } },
+          },
+          required: ["title"],
+        },
+      },
+    },
+    updateIssue: {
+      method: "PATCH",
+      path: "/repos/{owner}/{repo}/issues/{issue_number}",
+      description: "Update an issue",
+      authRequired: true,
+      parameters: [
+        { name: "owner", in: "path", required: true, type: "string" },
+        { name: "repo", in: "path", required: true, type: "string" },
+        { name: "issue_number", in: "path", required: true, type: "number" },
+      ],
+      requestBody: {
+        contentType: "application/json",
+        required: true,
+        schema: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            body: { type: "string" },
+            state: { type: "string", enum: ["open", "closed"] },
+            assignees: { type: "array", items: { type: "string" } },
+            labels: { type: "array", items: { type: "string" } },
+          },
+        },
+      },
+    },
+    getPullRequests: {
+      method: "GET",
+      path: "/repos/{owner}/{repo}/pulls",
+      description: "List pull requests",
+      authRequired: true,
+      parameters: [
+        { name: "owner", in: "path", required: true, type: "string" },
+        { name: "repo", in: "path", required: true, type: "string" },
+        { name: "state", in: "query", required: false, type: "string", enum: ["open", "closed", "all"] },
+        { name: "head", in: "query", required: false, type: "string" },
+        { name: "base", in: "query", required: false, type: "string" },
+        { name: "sort", in: "query", required: false, type: "string", enum: ["created", "updated", "popularity", "long-running"] },
+        { name: "direction", in: "query", required: false, type: "string", enum: ["asc", "desc"] },
+        { name: "per_page", in: "query", required: false, type: "number" },
+        { name: "page", in: "query", required: false, type: "number" },
+      ],
+    },
+    getPullRequest: {
+      method: "GET",
+      path: "/repos/{owner}/{repo}/pulls/{pull_number}",
+      description: "Get a pull request",
+      authRequired: true,
+      parameters: [
+        { name: "owner", in: "path", required: true, type: "string" },
+        { name: "repo", in: "path", required: true, type: "string" },
+        { name: "pull_number", in: "path", required: true, type: "number" },
+      ],
+    },
+    createPullRequest: {
+      method: "POST",
+      path: "/repos/{owner}/{repo}/pulls",
+      description: "Create a pull request",
+      authRequired: true,
+      parameters: [
+        { name: "owner", in: "path", required: true, type: "string" },
+        { name: "repo", in: "path", required: true, type: "string" },
+      ],
+      requestBody: {
+        contentType: "application/json",
+        required: true,
+        schema: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            head: { type: "string" },
+            base: { type: "string" },
+            body: { type: "string" },
+            draft: { type: "boolean" },
+          },
+          required: ["title", "head", "base"],
+        },
+      },
+    },
+    getCommits: {
+      method: "GET",
+      path: "/repos/{owner}/{repo}/commits",
+      description: "List commits",
+      authRequired: true,
+      parameters: [
+        { name: "owner", in: "path", required: true, type: "string" },
+        { name: "repo", in: "path", required: true, type: "string" },
+        { name: "sha", in: "query", required: false, type: "string" },
+        { name: "path", in: "query", required: false, type: "string" },
+        { name: "author", in: "query", required: false, type: "string" },
+        { name: "since", in: "query", required: false, type: "string" },
+        { name: "until", in: "query", required: false, type: "string" },
+        { name: "per_page", in: "query", required: false, type: "number" },
+        { name: "page", in: "query", required: false, type: "number" },
+      ],
+    },
+    getCommit: {
+      method: "GET",
+      path: "/repos/{owner}/{repo}/commits/{ref}",
+      description: "Get a commit",
+      authRequired: true,
+      parameters: [
+        { name: "owner", in: "path", required: true, type: "string" },
+        { name: "repo", in: "path", required: true, type: "string" },
+        { name: "ref", in: "path", required: true, type: "string" },
+      ],
+    },
+    createWebhook: {
+      method: "POST",
+      path: "/repos/{owner}/{repo}/hooks",
+      description: "Create a repository webhook",
+      authRequired: true,
+      parameters: [
+        { name: "owner", in: "path", required: true, type: "string" },
+        { name: "repo", in: "path", required: true, type: "string" },
+      ],
+      requestBody: {
+        contentType: "application/json",
+        required: true,
+        schema: {
+          type: "object",
+          properties: {
+            name: { type: "string", const: "web" },
+            config: {
+              type: "object",
+              properties: {
+                url: { type: "string" },
+                content_type: { type: "string", enum: ["json", "form"] },
+                secret: { type: "string" },
+                insecure_ssl: { type: "number", enum: [0, 1] },
+              },
+              required: ["url"],
+            },
+            events: { type: "array", items: { type: "string" } },
+            active: { type: "boolean" },
+          },
+          required: ["name", "config"],
+        },
+      },
+    },
+    getWebhooks: {
+      method: "GET",
+      path: "/repos/{owner}/{repo}/hooks",
+      description: "List repository webhooks",
+      authRequired: true,
+      parameters: [
+        { name: "owner", in: "path", required: true, type: "string" },
+        { name: "repo", in: "path", required: true, type: "string" },
+      ],
+    },
+    deleteWebhook: {
+      method: "DELETE",
+      path: "/repos/{owner}/{repo}/hooks/{hook_id}",
+      description: "Delete a repository webhook",
+      authRequired: true,
+      parameters: [
+        { name: "owner", in: "path", required: true, type: "string" },
+        { name: "repo", in: "path", required: true, type: "string" },
+        { name: "hook_id", in: "path", required: true, type: "number" },
+      ],
+    },
+  },
+  rateLimits: {
+    requests: 5000,
+    windowMs: 3600000,
+  } as RateLimitConfig,
+  permissions: {
+    scopes: ["repo", "user", "read:org", "read:user", "workflow"],
+    requiredPermissions: ["repo"],
+    optionalPermissions: ["admin:repo_hook", "delete_repo", "gist"],
+  } as PermissionConfig,
+  webhooks: {
+    events: [
+      "push",
+      "pull_request",
+      "issues",
+      "issue_comment",
+      "release",
+      "workflow_run",
+      "repository",
+    ],
+    secretHeader: "X-Hub-Signature-256",
+  },
+  metadata: {
+    categories: ["development", "version-control"],
+    tags: ["git", "github", "repositories", "issues", "pull-requests", "ci-cd"],
+  },
+};
+
+export default githubConfig;
