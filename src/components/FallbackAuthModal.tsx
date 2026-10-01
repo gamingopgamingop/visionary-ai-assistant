@@ -7,21 +7,17 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { lovable } from "@/integrations/lovable/index";
+import { oidcProviders, startOidcLogin } from "@/lib/oidc";
 
 /**
- * Fallback auth modal — activates when Clerk is unavailable or you wire up
- * Logto / Auth0 / FusionAuth via env vars (VITE_LOGTO_*, VITE_AUTH0_*, VITE_FUSIONAUTH_*).
- * Today it supports Supabase email/password + Google OAuth and provides
- * placeholder buttons for the other providers.
+ * Fallback auth modal — Lovable Cloud email/password + Google, plus any
+ * configured OIDC providers (ZITADEL / Logto / Better Auth) via VITE_* env vars.
  */
 
 const SOCIAL_PROVIDERS = [
   { id: "google", label: "Google" },
-  { id: "github", label: "GitHub" },
-  { id: "discord", label: "Discord" },
-  { id: "azure", label: "Microsoft" },
-  { id: "apple", label: "Apple" },
-  { id: "facebook", label: "Facebook" },
+  ...oidcProviders().map((p) => ({ id: p.id, label: p.label })),
 ];
 
 export default function FallbackAuthModal({
