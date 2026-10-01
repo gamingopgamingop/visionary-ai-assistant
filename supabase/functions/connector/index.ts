@@ -1,37 +1,94 @@
 // supabase/functions/connector/index.ts
-// @ts-ignore: Deno URL import
+
 import { createClient } from "@supabase/supabase-js";
-// @ts-ignore : npm package "@clerk/backend@3" is not installed or doesn't exist
-// deno-lint-ignore no-import-prefix
-import { verifyToken } from "npm:@clerk/backend";
+import { createClerkClient } from "npm:@clerk/backend@latest";
+
 const sb = createClient(
   Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
-async function sha256(s: string) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
-  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+const clerk = createClerkClient({
+  secretKey: Deno.env.get("CLERK_SECRET_KEY")!,
+  publishableKey: Deno.env.get("CLERK_PUBLISHABLE_KEY")!,
+});
+
+async function sha256(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(s),
+  );
+
+  return [...new Uint8Array(buf)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 async function authenticate(req: Request): Promise<string | null> {
+  // ---------------------------------------------------------
+  // 1. Custom x-api-key authentication
+  // ---------------------------------------------------------
   const apiKey = req.headers.get("x-api-key");
+
   if (apiKey) {
-    const { data } = await sb.from("api_keys").select("clerk_user_id")
-      .eq("key_hash", await sha256(apiKey)).eq("revoked", false).maybeSingle();
+    const { data, error } = await sb
+      .from("api_keys")
+      .select("clerk_user_id")
+      .eq("key_hash", await sha256(apiKey))
+      .eq("revoked", false)
+      .maybeSingle();
+
+    if (error) {
+      console.error("API key lookup failed:", error);
+      return null;
+    }
+
     return data?.clerk_user_id ?? null;
   }
-  const token = req.headers.get("authorization")?.replace("Bearer ", "");
-  if (!token) return null;
+
+  // ---------------------------------------------------------
+  // 2. Clerk Bearer-token authentication
+  // ---------------------------------------------------------
+  const authorization = req.headers.get("authorization");
+
+  if (!authorization?.startsWith("Bearer ")) {
+    return null;
+  }
+
   try {
-    const p = await verifyToken(token, { secretKey: Deno.env.get("CLERK_SECRET_KEY")! });
-    return p.sub;
-  } catch { return null; }
+    const { isAuthenticated, toAuth } =
+      await clerk.authenticateRequest(req);
+
+    if (!isAuthenticated) {
+      return null;
+    }
+
+    const auth = toAuth();
+
+    return auth.userId ?? null;
+  } catch (error) {
+    console.error("Clerk authentication failed:", error);
+    return null;
+  }
 }
+
+// -----------------------------------------------------------
+// Edge Function
+// -----------------------------------------------------------
 
 Deno.serve(async (req) => {
   const userId = await authenticate(req);
-  if (!userId) return new Response("Unauthorized", { status: 401 });
-  // ...connector logic using userId
-  return Response.json({ ok: true, userId });
+
+  if (!userId) {
+    return new Response("Unauthorized", {
+      status: 401,
+    });
+  }
+
+  // Your connector logic using userId...
+
+  return Response.json({
+    ok: true,
+    userId,
+  });
 });
