@@ -14,8 +14,7 @@ const sb = createClient(
 );
 
 /**
- * OAuth state lifetime:
- * 10 minutes.
+ * OAuth state lifetime: 10 minutes.
  */
 const OAUTH_STATE_TTL = 10 * 60 * 1000;
 
@@ -30,10 +29,8 @@ function isOAuthStateExpired(createdAt: number): boolean {
 }
 
 /**
- * Convert a value that may be either:
- * - a number/timestamp
- * - an ISO date string
- * into milliseconds.
+ * Convert a timestamp from either a number or
+ * a date string into milliseconds.
  */
 function toTimestamp(value: number | string): number {
   if (typeof value === "number") {
@@ -50,10 +47,12 @@ function toTimestamp(value: number | string): number {
 }
 
 /**
- * Get the encryption key used for connector tokens.
+ * Get encryption key.
  */
 async function getEncryptionKey(): Promise<CryptoKey> {
-  const keyData = new TextEncoder().encode(TOKEN_ENCRYPTION_KEY);
+  const keyData = new TextEncoder().encode(
+    TOKEN_ENCRYPTION_KEY,
+  );
 
   const hash = await crypto.subtle.digest(
     "SHA-256",
@@ -70,7 +69,7 @@ async function getEncryptionKey(): Promise<CryptoKey> {
 }
 
 /**
- * Encrypt a connector token.
+ * Encrypt a token.
  */
 export async function encryptToken(
   token: string,
@@ -108,7 +107,7 @@ export async function encryptToken(
 }
 
 /**
- * Decrypt a connector token.
+ * Decrypt a token.
  */
 export async function decryptToken(
   encryptedToken: string,
@@ -185,18 +184,27 @@ export async function getCredentials(
     return null;
   }
 
-  const decrypted: ConnectorCredentials = {};
+  /**
+   * Use a string map while decrypting.
+   *
+   * This avoids the TypeScript error:
+   * "Type 'string' is not assignable to type 'undefined'"
+   * when assigning through keyof ConnectorCredentials.
+   */
+  const decrypted: Record<string, string> = {};
+
+  const encryptedCredentials =
+    data.credentials as Record<string, string>;
 
   for (
     const [key, value] of Object.entries(
-      data.credentials as Record<string, string>,
+      encryptedCredentials,
     )
   ) {
-    decrypted[key as keyof ConnectorCredentials] =
-      await decryptToken(value);
+    decrypted[key] = await decryptToken(value);
   }
 
-  return decrypted;
+  return decrypted as ConnectorCredentials;
 }
 
 /**
@@ -221,14 +229,13 @@ export async function deleteCredentials(
 
 /**
  * Store OAuth state.
- *
- * The expiry is calculated here if the caller has not
- * already supplied one.
  */
 export async function storeOAuthState(
   state: OAuthState,
 ): Promise<void> {
-  const createdAt = toTimestamp(state.createdAt);
+  const createdAt = toTimestamp(
+    state.createdAt,
+  );
 
   const expiresAt =
     state.expiresAt ||
@@ -255,9 +262,9 @@ export async function storeOAuthState(
 }
 
 /**
- * Retrieve and validate OAuth state.
+ * Get OAuth state.
  *
- * OAuth state is valid for a maximum of 10 minutes.
+ * OAuth states expire after 10 minutes.
  */
 export async function getOAuthState(
   state: string,
@@ -272,9 +279,13 @@ export async function getOAuthState(
     return null;
   }
 
-  const createdAt = toTimestamp(data.created_at);
+  const createdAt = toTimestamp(
+    data.created_at,
+  );
 
-  const expiresAt = toTimestamp(data.expires_at);
+  const expiresAt = toTimestamp(
+    data.expires_at,
+  );
 
   const oauthState: OAuthState = {
     state: data.state,
@@ -288,16 +299,23 @@ export async function getOAuthState(
   };
 
   /**
-   * Check both the explicit expiration timestamp
-   * and the 10-minute TTL.
+   * Check the 10-minute application TTL.
    */
   const expiredByTtl =
-    isOAuthStateExpired(oauthState.createdAt);
+    isOAuthStateExpired(
+      oauthState.createdAt,
+    );
 
+  /**
+   * Also check the stored expiration timestamp.
+   */
   const expiredByTimestamp =
     Date.now() >= oauthState.expiresAt;
 
-  if (expiredByTtl || expiredByTimestamp) {
+  if (
+    expiredByTtl ||
+    expiredByTimestamp
+  ) {
     await deleteOAuthState(state);
     return null;
   }
@@ -306,7 +324,7 @@ export async function getOAuthState(
 }
 
 /**
- * Delete OAuth state after use.
+ * Delete OAuth state.
  */
 export async function deleteOAuthState(
   state: string,
@@ -324,7 +342,8 @@ export async function deleteOAuthState(
 }
 
 /**
- * Exchange an OAuth authorization code for tokens.
+ * Exchange OAuth authorization code
+ * for access and refresh tokens.
  */
 export async function exchangeOAuthCode(
   config: OAuth2Config,
@@ -382,7 +401,7 @@ export async function exchangeOAuthCode(
 }
 
 /**
- * Refresh an OAuth access token.
+ * Refresh OAuth access token.
  */
 export async function refreshOAuthToken(
   config: OAuth2Config,
@@ -419,7 +438,8 @@ export async function refreshOAuthToken(
   return {
     accessToken: tokenData.access_token,
     refreshToken:
-      tokenData.refresh_token || refreshToken,
+      tokenData.refresh_token ||
+      refreshToken,
     expiresAt:
       Date.now() +
       (tokenData.expires_in || 3600) * 1000,
@@ -430,7 +450,7 @@ export async function refreshOAuthToken(
 }
 
 /**
- * Generate a cryptographically random OAuth state.
+ * Generate random OAuth state.
  */
 export function generateOAuthState(): string {
   const array = new Uint8Array(32);
@@ -445,7 +465,7 @@ export function generateOAuthState(): string {
 }
 
 /**
- * Generate a PKCE verifier.
+ * Generate PKCE verifier.
  */
 export function generatePKCEVerifier(): string {
   const array = new Uint8Array(32);
@@ -460,9 +480,9 @@ export function generatePKCEVerifier(): string {
 }
 
 /**
- * Generate a PKCE S256 challenge.
+ * Generate PKCE S256 challenge.
  *
- * PKCE S256 requires:
+ * PKCE requires:
  *
  * BASE64URL(SHA256(verifier))
  */
@@ -494,7 +514,7 @@ export async function generatePKCEChallenge(
 }
 
 /**
- * Build the OAuth authorization URL.
+ * Build OAuth authorization URL.
  */
 export function buildAuthorizationUrl(
   config: OAuth2Config,
@@ -509,7 +529,10 @@ export function buildAuthorizationUrl(
     state,
   });
 
-  if (config.pkce && codeChallenge) {
+  if (
+    config.pkce &&
+    codeChallenge
+  ) {
     params.set(
       "code_challenge",
       codeChallenge,
@@ -525,11 +548,11 @@ export function buildAuthorizationUrl(
 }
 
 /**
- * Validate connector authentication configuration.
+ * Validate authentication configuration.
  */
-export async function validateAuthConfig(
+export function validateAuthConfig(
   config: AuthConfig,
-): Promise<boolean> {
+): boolean {
   switch (config.type) {
     case "oauth2":
       return !!(
