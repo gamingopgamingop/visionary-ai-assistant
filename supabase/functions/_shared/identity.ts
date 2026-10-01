@@ -6,8 +6,8 @@ import { createRemoteJWKSet, jwtVerify } from "https://esm.sh/jose@5.9.6";
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-auth-provider",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "authorization, x-client-info, apikey, content-type, x-auth-provider, x-api-key",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
 export const admin = () =>
@@ -21,7 +21,16 @@ export type Identity = {
   userId: string;
   email: string | null;
   provider: string;
+  apiKeyId?: string;
+  scopes?: string[];
+  roles?: Role[];
 };
+
+export class RateLimitError extends Error {
+  constructor(public resetAt: string | null) {
+    super("Rate limit exceeded");
+  }
+}
 
 const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 function jwks(url: string) {
@@ -74,8 +83,43 @@ async function verifyOidc(token: string, issuer: string, provider: string): Prom
   }
 }
 
-/** Resolve the caller identity from the Authorization bearer token. Never trusts body fields. */
+export async function sha256Hex(input: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Resolve identity from an x-api-key header (hashed lookup, non-revoked only). */
+async function identityFromApiKey(rawKey: string): Promise<Identity | null> {
+  const hash = await sha256Hex(rawKey);
+  const { data } = await admin()
+    .from("api_keys")
+    .select("id, user_id, scopes")
+    .eq("key_hash", hash)
+    .eq("revoked", false)
+    .maybeSingle();
+  if (!data) return null;
+  admin().from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", data.id).then(() => {});
+  const roles = await getRoles(data.user_id);
+  return {
+    userId: data.user_id,
+    email: null,
+    provider: "api-key",
+    apiKeyId: data.id,
+    scopes: data.scopes ?? [],
+    roles,
+  };
+}
+
+/** Resolve the caller identity: x-api-key first, then Authorization bearer token. Never trusts body fields. */
 export async function getIdentity(req: Request): Promise<Identity | null> {
+  const apiKey = req.headers.get("x-api-key")?.trim();
+  if (apiKey) {
+    const id = await identityFromApiKey(apiKey);
+    if (!id) return null;
+    const rl = await rateLimit(`apikey:${id.apiKeyId}`, "api-key", 120, 60);
+    if (!rl.allowed) throw new RateLimitError(rl.resetAt);
+    return id;
+  }
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
   if (!token) return null;
