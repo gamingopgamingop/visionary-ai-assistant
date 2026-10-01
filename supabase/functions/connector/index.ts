@@ -1,8 +1,9 @@
 // supabase/functions/connector/index.ts
 // @ts-ignore: Deno URL import
 import { createClient } from "@supabase/supabase-js";
-// @ts-ignore
-import { verifyToken } from "@clerk/backend";
+// @ts-ignore : npm package "@clerk/backend@3" is not installed or doesn't exist
+// deno-lint-ignore no-import-prefix
+import { verifyToken } from "npm:@clerk/backend";
 const sb = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
