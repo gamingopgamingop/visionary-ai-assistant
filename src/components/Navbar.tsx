@@ -16,6 +16,11 @@ const LINKS = [
   { to: "/pricing", label: "Pricing" },
   { to: "/donate", label: "Donate" },
   { to: "/workspace", label: "Workspace" },
+  { to: "/gallery", label: "Gallery" },
+];
+const AUTH_LINKS = [
+  { to: "/keys", label: "API keys" },
+  { to: "/admin", label: "Admin" },
 ];
 
 const linkCls = ({ isActive }: { isActive: boolean }) =>
@@ -40,7 +45,7 @@ export default function Navbar() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
-          {LINKS.map((l) => <NavLink key={l.to} to={l.to} end={l.to === "/"} className={linkCls}>{l.label}</NavLink>)}
+          {[...LINKS, ...(isSignedIn ? AUTH_LINKS : [])].map((l) => <NavLink key={l.to} to={l.to} end={l.to === "/"} className={linkCls}>{l.label}</NavLink>)}
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
@@ -63,7 +68,7 @@ export default function Navbar() {
           </SheetTrigger>
           <SheetContent side="right" className="w-72">
             <div className="flex flex-col gap-4 mt-8">
-              {LINKS.map((l) => (
+              {[...LINKS, ...(isSignedIn ? AUTH_LINKS : [])].map((l) => (
                 <NavLink key={l.to} to={l.to} end={l.to === "/"} className={linkCls} onClick={() => setMobile(false)}>
                   {l.label}
                 </NavLink>
