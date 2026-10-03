@@ -13,7 +13,7 @@ const ClerkAuthInner = () => {
   if (!isLoaded) return null;
 
   if (isSignedIn) {
-    return <UserButton afterSignOutUrl="/" />;
+    return <UserButton />;
   }
 
   return (
