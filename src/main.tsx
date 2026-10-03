@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { ClerkProvider } from "@clerk/clerk-react";
+import { ClerkProvider } from "@clerk/react";
 import { ThemeProvider } from "@mui/material/styles";
 import App from "./App.tsx";
 import "./index.css";

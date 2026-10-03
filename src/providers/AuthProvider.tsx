@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/react";
 import { supabase } from "@/integrations/supabase/client";
 import { CLERK_PUBLISHABLE_KEY } from "@/config/clerk";
 import { getOidcSession, oidcSignOut, type OidcSession } from "@/lib/oidc";
