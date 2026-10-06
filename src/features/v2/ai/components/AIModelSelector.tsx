@@ -158,9 +158,8 @@ export function AIModelSelector({
                     {model.capabilities.join(', ')}
                   </span>
                 </button>
-              ))
-            )}
-            {models.length === 0 && (
+              ))}
+              {models.length === 0 && (
               <div style={{ padding: '1rem', textAlign: 'center', color: '#6b7280' }}>
                 No models available
               </div>

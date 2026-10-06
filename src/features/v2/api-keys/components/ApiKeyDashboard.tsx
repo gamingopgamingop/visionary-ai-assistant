@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApiKeysV2, useApiKeysScopes } from '../hooks/useApiKeys';
-import { CreateApiKeyResponse } from '../services/apiKeysService';
+import { ApiKeyData, CreateApiKeyResponse } from '../services/apiKeysService';
 import { LoadingState, EmptyState, ErrorDisplay, Modal } from '../../shared/components';
 import { ApiKeyCard } from './ApiKeyCard';
 import { ApiKeyRevokeDialog } from './ApiKeyRevokeDialog';
@@ -14,8 +14,8 @@ export function ApiKeyDashboard({ className = '' }: ApiKeyDashboardProps) {
   const { apiKeys, loading, error, refetch } = useApiKeysV2();
   const { scopes: availableScopes, loading: scopesLoading } = useApiKeysScopes();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [revokingKey, setRevokingKey] = useState<any | null>(null);
-  const [rotatingKey, setRotatingKey] = useState<any | null>(null);
+  const [revokingKey, setRevokingKey] = useState<ApiKeyData | null>(null);
+  const [rotatingKey, setRotatingKey] = useState<ApiKeyData | null>(null);
   const [newKey, setNewKey] = useState<CreateApiKeyResponse | null>(null);
 
   const activeKeys = apiKeys.filter(k => !k.revoked && (!k.expiresAt || new Date(k.expiresAt) > new Date()));

@@ -22,9 +22,9 @@ export function RoleManager({ className = '' }: RoleManagerProps) {
   const [roles, setRoles] = useState<RoleWithPerms[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [selectedRole, setSelectedRole] = useState<any | null>(null);
+  const [selectedRole, setSelectedRole] = useState<RoleWithPerms | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingRole, setEditingRole] = useState<any | null>(null);
+  const [editingRole, setEditingRole] = useState<RoleWithPerms | null>(null);
 
   const fetchRoles = async () => {
     setLoading(true);

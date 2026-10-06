@@ -152,7 +152,8 @@ export function ConnectorActionPanel({
               actionParams={getActionParams(action)}
               executing={false}
             />
-          ))}
+          );
+        })}
         </div>
 
         <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb' }}>
