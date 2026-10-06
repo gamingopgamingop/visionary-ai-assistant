@@ -4,6 +4,7 @@ import { connectorServiceV2, ConnectorConfig, ConnectorConnection, ConnectorActi
 // Re-export connector types for component imports
 export type { ConnectorConfig, ConnectorConnection, ConnectorActionResult, ConnectionTestResult };
 import { PaginationParams } from '../../shared/types';
+import type { CreateConnectionRequest, UpdateConnectionRequest } from '../services/connectorService';
 
 interface UseConnectorsV2Return {
   connectors: ConnectorConfig[];
@@ -91,8 +92,8 @@ interface UseConnectorConnectionsReturn {
   loading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
-  createConnection: (request: unknown) => Promise<{ success: boolean; error?: string; data?: unknown }>;
-  updateConnection: (connectionId: string, request: unknown) => Promise<{ success: boolean; error?: string; data?: unknown }>;
+  createConnection: (request: CreateConnectionRequest) => Promise<{ success: boolean; error?: string; data?: unknown }>;
+  updateConnection: (connectionId: string, request: UpdateConnectionRequest) => Promise<{ success: boolean; error?: string; data?: unknown }>;
   deleteConnection: (connectionId: string) => Promise<{ success: boolean; error?: string }>;
   testConnection: (connectionId: string) => Promise<{ success: boolean; error?: string }>;
   executeAction: (connectionId: string, action: string, params: Record<string, unknown>) => Promise<{ success: boolean; error?: string; data?: unknown }>;
@@ -126,7 +127,7 @@ export function useConnectorConnections(): UseConnectorConnectionsReturn {
     refetch();
   }, [refetch]);
 
-  const createConnection = async (request: unknown) => {
+  const createConnection = async (request: CreateConnectionRequest) => {
     setError(null);
     try {
       const response = await connectorServiceV2.createConnection(request);
@@ -144,7 +145,7 @@ export function useConnectorConnections(): UseConnectorConnectionsReturn {
     }
   };
 
-  const updateConnection = async (connectionId: string, request: unknown) => {
+  const updateConnection = async (connectionId: string, request: UpdateConnectionRequest) => {
     setError(null);
     try {
       const response = await connectorServiceV2.updateConnection(connectionId, request);

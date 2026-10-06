@@ -10,7 +10,7 @@ interface UseAIGatewayReturn {
   refetch: () => Promise<void>;
   getProviders: (enabledOnly?: boolean) => Promise<void>;
   getModels: (filters?: { providerId?: string; status?: string; capability?: string }) => Promise<void>;
-  chatCompletion: (request: unknown) => Promise<{ success: boolean; error?: string; data?: unknown }>;
+  chatCompletion: (request: ChatRequest) => Promise<{ success: boolean; error?: string; data?: unknown }>;
   checkQuota: (userId: string, resourceType: string, quantity?: number) => Promise<{ success: boolean; error?: string; data?: unknown }>;
   getUsage: (userId: string, resourceType?: string, startDate?: string, endDate?: string) => Promise<{ success: boolean; error?: string; data?: unknown }>;
   getUsageSummary: (userId: string, startDate?: string, endDate?: string) => Promise<{ success: boolean; error?: string; data?: unknown }>;
@@ -20,8 +20,8 @@ interface UseAIGatewayReturn {
 }
 
 export function useAIGateway(): UseAIGatewayReturn {
-  const [providers, setProviders] = useState<unknown[]>([]);
-  const [models, setModels] = useState<unknown[]>([]);
+  const [providers, setProviders] = useState<ProviderConfig[]>([]);
+  const [models, setModels] = useState<ModelConfig[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -235,7 +235,7 @@ export function useAIGateway(): UseAIGatewayReturn {
 }
 
 interface UseAIModelsReturn {
-  models: unknown[];
+  models: ModelConfig[];
   loading: boolean;
   error: Error | null;
   refetch: (filters?: { providerId?: string; status?: string; capability?: string }) => Promise<void>;
@@ -243,7 +243,7 @@ interface UseAIModelsReturn {
 }
 
 export function useAIModels(): UseAIModelsReturn {
-  const [models, setModels] = useState<unknown[]>([]);
+  const [models, setModels] = useState<ModelConfig[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -290,7 +290,7 @@ export function useAIModels(): UseAIModelsReturn {
 }
 
 interface UseAIProvidersReturn {
-  providers: unknown[];
+  providers: ProviderConfig[];
   loading: boolean;
   error: Error | null;
   refetch: (enabledOnly?: boolean) => Promise<void>;
@@ -298,7 +298,7 @@ interface UseAIProvidersReturn {
 }
 
 export function useAIProviders(): UseAIProvidersReturn {
-  const [providers, setProviders] = useState<unknown[]>([]);
+  const [providers, setProviders] = useState<ProviderConfig[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -345,7 +345,7 @@ export function useAIProviders(): UseAIProvidersReturn {
 }
 
 interface UseAIQuotasReturn {
-  quotas: unknown[];
+  quotas: QuotaCheckResult[];
   loading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
@@ -353,7 +353,7 @@ interface UseAIQuotasReturn {
 }
 
 export function useAIQuotas(userId: string | null): UseAIQuotasReturn {
-  const [quotas, setQuotas] = useState<unknown[]>([]);
+  const [quotas, setQuotas] = useState<QuotaCheckResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -403,7 +403,7 @@ export function useAIQuotas(userId: string | null): UseAIQuotasReturn {
 }
 
 interface UseAIUsageReturn {
-  usage: unknown[];
+  usage: UsageRecord[];
   summary: Record<string, number> | null;
   loading: boolean;
   error: Error | null;
@@ -415,7 +415,7 @@ interface UseAIUsageReturn {
 }
 
 export function useAIUsage(userId: string | null): UseAIUsageReturn {
-  const [usage, setUsage] = useState<unknown[]>([]);
+  const [usage, setUsage] = useState<UsageRecord[]>([]);
   const [summary, setSummary] = useState<Record<string, number> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
