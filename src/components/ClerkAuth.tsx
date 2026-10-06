@@ -3,7 +3,7 @@ import {
   SignUpButton,
   UserButton,
   useAuth,
-} from "@clerk/clerk-react";
+} from "@clerk/react";
 import { Button } from "@/components/ui/button";
 import { CLERK_PUBLISHABLE_KEY } from "@/config/clerk";
 
@@ -13,7 +13,7 @@ const ClerkAuthInner = () => {
   if (!isLoaded) return null;
 
   if (isSignedIn) {
-    return <UserButton afterSignOutUrl="/" />;
+    return <UserButton />;
   }
 
   return (

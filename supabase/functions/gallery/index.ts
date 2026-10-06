@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import {
-  admin, clientIp, corsHeaders, getIdentity, getRoles, isAdmin, isModerator, json, rateLimit,
+  admin, clientIp, RateLimitError, corsHeaders, getIdentity, getRoles, isAdmin, isModerator, json, rateLimit,
 } from "../_shared/identity.ts";
 
 const BUCKET = "gallery";
@@ -217,6 +217,7 @@ serve(async (req) => {
 
     return json({ error: `Unknown action: ${action}` }, 400);
   } catch (e) {
+    if (e instanceof RateLimitError) return json({ error: "Rate limit exceeded", resetAt: e.resetAt }, 429);
     console.error("gallery error:", e);
     return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
   }

@@ -10,6 +10,10 @@ import Features from "./pages/Features";
 import Pipelines from "./pages/Pipelines";
 import Donations from "./pages/Donations";
 import Callback from "./pages/Callback";
+import Gallery from "./pages/Gallery";
+import SharedView from "./pages/SharedView";
+import Admin from "./pages/Admin";
+import ApiKeys from "./pages/ApiKeys";
 import NotFound from "./pages/NotFound";
 import Navbar from "@/components/Navbar";
 import { AuthProvider } from "@/providers/AuthProvider";
@@ -32,6 +36,10 @@ const App = () => (
             <Route path="/pipelines" element={<Pipelines />} />
             <Route path="/donate" element={<Donations />} />
             <Route path="/callback" element={<Callback />} />
+            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/s/:token" element={<SharedView />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/keys" element={<ApiKeys />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
