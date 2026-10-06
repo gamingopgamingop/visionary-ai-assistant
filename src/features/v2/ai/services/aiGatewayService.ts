@@ -13,7 +13,7 @@ export interface ProviderConfig {
   healthCheckUrl?: string;
   healthCheckIntervalMs: number;
   config: Record<string, unknown>;
-  rateLimits?: any;
+  rateLimits?: unknown;
   supportedModels: string[];
 }
 

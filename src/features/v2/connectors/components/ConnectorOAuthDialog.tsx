@@ -4,7 +4,7 @@ import { Modal, LoadingState, ErrorDisplay } from '../../shared/components';
 import { connectorServiceV2 } from '../services/connectorService';
 
 interface ConnectorOAuthDialogProps {
-  connector: any;
+  connector: unknown;
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (connectionId: string) => void;
@@ -204,8 +204,8 @@ export function ConnectorActionPanel({
   onExecute,
   availableActions 
 }: { 
-  connector: any; 
-  connection: any; 
+  connector: unknown; 
+  connection: unknown; 
   onTest: () => void;
   onExecute: (action: string, params: Record<string, unknown>) => void;
   availableActions: string[];
@@ -248,7 +248,7 @@ export function ConnectorActionPanel({
   );
 }
 
-function ActionCard({ action, connector, connection, onExecute }: { action: string; connector: any; connection: any; onExecute: (action: string, params: Record<string, unknown>) => void }) {
+function ActionCard({ action, connector, connection, onExecute }: { action: string; connector: unknown; connection: unknown; onExecute: (action: string, params: Record<string, unknown>) => void }) {
   const [showParams, setShowParams] = useState(false);
   const [params, setParams] = useState<Record<string, unknown>>({});
 
@@ -332,7 +332,7 @@ function getActionParams(action: string): { name: string; type: string; required
   return paramMap[action] || [];
 }
 
-export function ConnectorTestButton({ connector, connection, onTest }: { connector: any; connection: any; onTest: () => void }) {
+export function ConnectorTestButton({ connector, connection, onTest }: { connector: unknown; connection: unknown; onTest: () => void }) {
   return (
     <button 
       onClick={onTest}

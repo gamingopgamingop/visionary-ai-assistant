@@ -91,8 +91,8 @@ interface UseConnectorConnectionsReturn {
   loading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
-  createConnection: (request: any) => Promise<{ success: boolean; error?: string; data?: any }>;
-  updateConnection: (connectionId: string, request: any) => Promise<{ success: boolean; error?: string; data?: any }>;
+  createConnection: (request: unknown) => Promise<{ success: boolean; error?: string; data?: unknown }>;
+  updateConnection: (connectionId: string, request: unknown) => Promise<{ success: boolean; error?: string; data?: unknown }>;
   deleteConnection: (connectionId: string) => Promise<{ success: boolean; error?: string }>;
   testConnection: (connectionId: string) => Promise<{ success: boolean; error?: string }>;
   executeAction: (connectionId: string, action: string, params: Record<string, unknown>) => Promise<{ success: boolean; error?: string; data?: unknown }>;
@@ -126,7 +126,7 @@ export function useConnectorConnections(): UseConnectorConnectionsReturn {
     refetch();
   }, [refetch]);
 
-  const createConnection = async (request: any) => {
+  const createConnection = async (request: unknown) => {
     setError(null);
     try {
       const response = await connectorServiceV2.createConnection(request);
@@ -144,7 +144,7 @@ export function useConnectorConnections(): UseConnectorConnectionsReturn {
     }
   };
 
-  const updateConnection = async (connectionId: string, request: any) => {
+  const updateConnection = async (connectionId: string, request: unknown) => {
     setError(null);
     try {
       const response = await connectorServiceV2.updateConnection(connectionId, request);

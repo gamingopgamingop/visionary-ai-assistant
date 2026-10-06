@@ -7,8 +7,8 @@ interface PermissionMatrixProps {
 }
 
 export function PermissionMatrix({ className = '' }: PermissionMatrixProps) {
-  const [roles, setRoles] = useState<any[]>([]);
-  const [permissions, setPermissions] = useState<any[]>([]);
+  const [roles, setRoles] = useState<unknown[]>([]);
+  const [permissions, setPermissions] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
@@ -81,7 +81,7 @@ export function PermissionMatrix({ className = '' }: PermissionMatrixProps) {
     if (!acc[perm.resource]) acc[perm.resource] = [];
     acc[perm.resource].push(perm);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, unknown[]>);
 
   return (
     <div className={`v2-permission-matrix ${className}`}>
@@ -154,7 +154,7 @@ export function PermissionMatrix({ className = '' }: PermissionMatrixProps) {
                     </div>
                   </td>
                   {permissions.map(perm => {
-                    const hasPermission = role.permissions?.some((p: any) => p.id === perm.id);
+                    const hasPermission = role.permissions?.some((p: unknown) => p.id === perm.id);
                     return (
                       <td key={perm.id} style={{ padding: '0.5rem', textAlign: 'center', verticalAlign: 'middle' }}>
                         {hasPermission ? (

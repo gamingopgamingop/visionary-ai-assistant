@@ -130,11 +130,11 @@ export class ConnectorServiceV2 {
     return apiClient.post<ConnectorOAuthResponse>('/connectors/oauth/authorize', request);
   }
 
-  async handleOAuthCallback(request: ConnectorOAuthCallbackRequest): Promise<ApiResponse<{ userId: string; connectorId: string; tokenData: any }>> {
+  async handleOAuthCallback(request: ConnectorOAuthCallbackRequest): Promise<ApiResponse<{ userId: string; connectorId: string; tokenData: unknown }>> {
     return apiClient.post('/connectors/oauth/callback', request);
   }
 
-  async refreshToken(connectorId: string): Promise<ApiResponse<any>> {
+  async refreshToken(connectorId: string): Promise<ApiResponse<unknown>> {
     return apiClient.post('/connectors/oauth/refresh', { connectorId });
   }
 
@@ -142,11 +142,11 @@ export class ConnectorServiceV2 {
     return apiClient.post('/connectors/oauth/revoke', { connectorId });
   }
 
-  async getConnectorLogs(connectionId: string, params?: PaginationParams): Promise<ApiResponse<any>> {
+  async getConnectorLogs(connectionId: string, params?: PaginationParams): Promise<ApiResponse<unknown>> {
     return apiClient.get(`/connectors/connections/${connectionId}/logs`, params);
   }
 
-  async getConnectorMetrics(connectorId: string): Promise<ApiResponse<any>> {
+  async getConnectorMetrics(connectorId: string): Promise<ApiResponse<unknown>> {
     return apiClient.get(`/connectors/${connectorId}/metrics`);
   }
 }

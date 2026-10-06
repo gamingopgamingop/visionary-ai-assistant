@@ -3,8 +3,8 @@ import { ConnectorConfigType, ConnectorConnection } from '../../shared/types';
 import { ActionButtonProps } from '../../shared/types';
 
 interface ConnectorActionPanelProps {
-  connector: any;
-  connection: any;
+  connector: unknown;
+  connection: unknown;
   onTest: () => void;
   onExecute: (action: string, params: Record<string, unknown>) => void;
   availableActions: string[];
@@ -328,7 +328,7 @@ function ActionCard({
   );
 }
 
-export function ConnectorTestButton({ connector, connection, onTest }: { connector: any; connection: any; onTest: () => void }) {
+export function ConnectorTestButton({ connector, connection, onTest }: { connector: unknown; connection: unknown; onTest: () => void }) {
   return (
     <button 
       onClick={onTest}

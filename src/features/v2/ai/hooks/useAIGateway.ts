@@ -10,18 +10,18 @@ interface UseAIGatewayReturn {
   refetch: () => Promise<void>;
   getProviders: (enabledOnly?: boolean) => Promise<void>;
   getModels: (filters?: { providerId?: string; status?: string; capability?: string }) => Promise<void>;
-  chatCompletion: (request: any) => Promise<{ success: boolean; error?: string; data?: any }>;
-  checkQuota: (userId: string, resourceType: string, quantity?: number) => Promise<{ success: boolean; error?: string; data?: any }>;
-  getUsage: (userId: string, resourceType?: string, startDate?: string, endDate?: string) => Promise<{ success: boolean; error?: string; data?: any }>;
-  getUsageSummary: (userId: string, startDate?: string, endDate?: string) => Promise<{ success: boolean; error?: string; data?: any }>;
-  checkProviderHealth: (providerId: string) => Promise<{ success: boolean; error?: string; data?: any }>;
-  checkModelHealth: (modelId: string) => Promise<{ success: boolean; error?: string; data?: any }>;
-  runHealthChecks: () => Promise<{ success: boolean; error?: string; data?: any }>;
+  chatCompletion: (request: unknown) => Promise<{ success: boolean; error?: string; data?: unknown }>;
+  checkQuota: (userId: string, resourceType: string, quantity?: number) => Promise<{ success: boolean; error?: string; data?: unknown }>;
+  getUsage: (userId: string, resourceType?: string, startDate?: string, endDate?: string) => Promise<{ success: boolean; error?: string; data?: unknown }>;
+  getUsageSummary: (userId: string, startDate?: string, endDate?: string) => Promise<{ success: boolean; error?: string; data?: unknown }>;
+  checkProviderHealth: (providerId: string) => Promise<{ success: boolean; error?: string; data?: unknown }>;
+  checkModelHealth: (modelId: string) => Promise<{ success: boolean; error?: string; data?: unknown }>;
+  runHealthChecks: () => Promise<{ success: boolean; error?: string; data?: unknown }>;
 }
 
 export function useAIGateway(): UseAIGatewayReturn {
-  const [providers, setProviders] = useState<any[]>([]);
-  const [models, setModels] = useState<any[]>([]);
+  const [providers, setProviders] = useState<unknown[]>([]);
+  const [models, setModels] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -90,7 +90,7 @@ export function useAIGateway(): UseAIGatewayReturn {
     }
   };
 
-  const chatCompletion = async (request: any) => {
+  const chatCompletion = async (request: unknown) => {
     setError(null);
     try {
       const response = await aiGatewayServiceV2.chatCompletion(request);
@@ -235,15 +235,15 @@ export function useAIGateway(): UseAIGatewayReturn {
 }
 
 interface UseAIModelsReturn {
-  models: any[];
+  models: unknown[];
   loading: boolean;
   error: Error | null;
   refetch: (filters?: { providerId?: string; status?: string; capability?: string }) => Promise<void>;
-  getBestModel: (capability: string, providerPriority?: string[]) => Promise<{ success: boolean; error?: string; data?: any }>;
+  getBestModel: (capability: string, providerPriority?: string[]) => Promise<{ success: boolean; error?: string; data?: unknown }>;
 }
 
 export function useAIModels(): UseAIModelsReturn {
-  const [models, setModels] = useState<any[]>([]);
+  const [models, setModels] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -290,15 +290,15 @@ export function useAIModels(): UseAIModelsReturn {
 }
 
 interface UseAIProvidersReturn {
-  providers: any[];
+  providers: unknown[];
   loading: boolean;
   error: Error | null;
   refetch: (enabledOnly?: boolean) => Promise<void>;
-  checkHealth: (providerId: string) => Promise<{ success: boolean; error?: string; data?: any }>;
+  checkHealth: (providerId: string) => Promise<{ success: boolean; error?: string; data?: unknown }>;
 }
 
 export function useAIProviders(): UseAIProvidersReturn {
-  const [providers, setProviders] = useState<any[]>([]);
+  const [providers, setProviders] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -345,15 +345,15 @@ export function useAIProviders(): UseAIProvidersReturn {
 }
 
 interface UseAIQuotasReturn {
-  quotas: any[];
+  quotas: unknown[];
   loading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
-  checkQuota: (userId: string, resourceType: string, quantity?: number) => Promise<{ success: boolean; error?: string; data?: any }>;
+  checkQuota: (userId: string, resourceType: string, quantity?: number) => Promise<{ success: boolean; error?: string; data?: unknown }>;
 }
 
 export function useAIQuotas(userId: string | null): UseAIQuotasReturn {
-  const [quotas, setQuotas] = useState<any[]>([]);
+  const [quotas, setQuotas] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -403,19 +403,19 @@ export function useAIQuotas(userId: string | null): UseAIQuotasReturn {
 }
 
 interface UseAIUsageReturn {
-  usage: any[];
+  usage: unknown[];
   summary: Record<string, number> | null;
   loading: boolean;
   error: Error | null;
   refetch: (resourceType?: string, startDate?: string, endDate?: string) => Promise<void>;
-  getSummary: () => Promise<{ success: boolean; error?: string; data?: any }>;
-  getByModel: () => Promise<{ success: boolean; error?: string; data?: any }>;
-  getByProvider: () => Promise<{ success: boolean; error?: string; data?: any }>;
-  getDaily: (days?: number) => Promise<{ success: boolean; error?: string; data?: any }>;
+  getSummary: () => Promise<{ success: boolean; error?: string; data?: unknown }>;
+  getByModel: () => Promise<{ success: boolean; error?: string; data?: unknown }>;
+  getByProvider: () => Promise<{ success: boolean; error?: string; data?: unknown }>;
+  getDaily: (days?: number) => Promise<{ success: boolean; error?: string; data?: unknown }>;
 }
 
 export function useAIUsage(userId: string | null): UseAIUsageReturn {
-  const [usage, setUsage] = useState<any[]>([]);
+  const [usage, setUsage] = useState<unknown[]>([]);
   const [summary, setSummary] = useState<Record<string, number> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);

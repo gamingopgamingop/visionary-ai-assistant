@@ -170,7 +170,7 @@ export function AIProviderSelector({
   );
 }
 
-export function AIProviderCard({ provider, onSelect, showHealth = true }: { provider: any; onSelect?: (id: string) => void; showHealth?: boolean }) {
+export function AIProviderCard({ provider, onSelect, showHealth = true }: { provider: unknown; onSelect?: (id: string) => void; showHealth?: boolean }) {
   return (
     <div 
       style={{ 
@@ -282,7 +282,7 @@ export function AIProviderCard({ provider, onSelect, showHealth = true }: { prov
   );
 }
 
-export function AIProviderList({ providers, onSelect, className = '' }: { providers: any[]; onSelect?: (id: string) => void; className?: string }) {
+export function AIProviderList({ providers, onSelect, className = '' }: { providers: unknown[]; onSelect?: (id: string) => void; className?: string }) {
   return (
     <div className={`v2-ai-provider-list ${className}`} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
       {providers.map(provider => (

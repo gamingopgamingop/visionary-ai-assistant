@@ -9,8 +9,8 @@ interface UserRoleEditorProps {
 }
 
 export function UserRoleEditor({ userId, className = '', onClose }: UserRoleEditorProps) {
-  const [userRoles, setUserRoles] = useState<any[]>([]);
-  const [availableRoles, setAvailableRoles] = useState<any[]>([]);
+  const [userRoles, setUserRoles] = useState<unknown[]>([]);
+  const [availableRoles, setAvailableRoles] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [assigning, setAssigning] = useState(false);

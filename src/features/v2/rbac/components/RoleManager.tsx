@@ -10,7 +10,7 @@ interface RoleManagerProps {
 
 export function RoleManager({ className = '' }: RoleManagerProps) {
   const { user, loading: authLoading } = useAuthV2();
-  const [roles, setRoles] = useState<any[]>([]);
+  const [roles, setRoles] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [selectedRole, setSelectedRole] = useState<any | null>(null);
@@ -218,7 +218,7 @@ export function RoleManager({ className = '' }: RoleManagerProps) {
   );
 }
 
-function RoleCard({ role, onEdit, onDelete, disabled }: { role: any; onEdit: (role: any) => void; onDelete: (id: string) => void; disabled: boolean }) {
+function RoleCard({ role, onEdit, onDelete, disabled }: { role: unknown; onEdit: (role: unknown) => void; onDelete: (id: string) => void; disabled: boolean }) {
   return (
     <div style={{ 
       background: 'white', 
@@ -333,7 +333,7 @@ function RoleCard({ role, onEdit, onDelete, disabled }: { role: any; onEdit: (ro
   );
 }
 
-function CreateRoleModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (data: any) => Promise<void> }) {
+function CreateRoleModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (data: unknown) => Promise<void> }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [level, setLevel] = useState(10);
@@ -411,7 +411,7 @@ function CreateRoleModal({ onClose, onSubmit }: { onClose: () => void; onSubmit:
   );
 }
 
-function EditRoleModal({ role, onClose, onSubmit, onAssignPermissions, onRemovePermission }: { role: any; onClose: () => void; onSubmit: (id: string, data: any) => Promise<void>; onAssignPermissions: (roleId: string, permissionIds: string[]) => Promise<void>; onRemovePermission: (roleId: string, permissionId: string) => Promise<void> }) {
+function EditRoleModal({ role, onClose, onSubmit, onAssignPermissions, onRemovePermission }: { role: unknown; onClose: () => void; onSubmit: (id: string, data: unknown) => Promise<void>; onAssignPermissions: (roleId: string, permissionIds: string[]) => Promise<void>; onRemovePermission: (roleId: string, permissionId: string) => Promise<void> }) {
   const [name, setName] = useState(role.name);
   const [description, setDescription] = useState(role.description || '');
   const [level, setLevel] = useState(role.level);

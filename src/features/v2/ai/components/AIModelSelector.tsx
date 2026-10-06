@@ -525,7 +525,7 @@ export function AIQuotaIndicator({ userId }: { userId: string }) {
   );
 }
 
-export function AIProviderStatus({ providers }: { providers: any[] }) {
+export function AIProviderStatus({ providers }: { providers: unknown[] }) {
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
       {providers.map(p => (

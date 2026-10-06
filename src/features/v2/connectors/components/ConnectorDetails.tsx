@@ -44,7 +44,7 @@ export function ConnectorDetails({ connectorId, className = '', onClose }: Conne
         const res = await fetch('/v2/connector-v2/connector/connections', { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
-          setConnections(data.filter((c: any) => c.connectorId === connectorId));
+          setConnections(data.filter((c: unknown) => c.connectorId === connectorId));
         }
       } catch (err) {
         console.error('Failed to fetch connections:', err);
@@ -121,7 +121,7 @@ export function ConnectorDetails({ connectorId, className = '', onClose }: Conne
   );
 }
 
-function ConnectorHeader({ connector, onClose }: { connector: any; onClose?: () => void }) {
+function ConnectorHeader({ connector, onClose }: { connector: unknown; onClose?: () => void }) {
   return (
     <div style={{ 
       display: 'flex', 
@@ -213,7 +213,7 @@ function ConnectorHeader({ connector, onClose }: { connector: any; onClose?: () 
   );
 }
 
-function ConnectorOverview({ connector }: { connector: any }) {
+function ConnectorOverview({ connector }: { connector: unknown }) {
   const statusConfig = {
     active: { bg: '#dcfce7', color: '#166534', label: 'Active' },
     pending: { bg: '#fef3c7', color: '#92400e', label: 'Pending Setup' },
@@ -315,9 +315,9 @@ function ConnectorOverview({ connector }: { connector: any }) {
 }
 
 function ConnectionsTab({ connections, onAdd, onEdit, onDelete, onTest }: { 
-  connections: any[]; 
+  connections: unknown[]; 
   onAdd: () => void;
-  onEdit: (conn: any) => void;
+  onEdit: (conn: unknown) => void;
   onDelete: (id: string) => void;
   onTest: (id: string) => void;
 }) {
@@ -374,7 +374,7 @@ function PermissionsTab({ connectorId }: { connectorId: string }) {
   return <div style={{ padding: '1.5rem', textAlign: 'center', color: '#6b7280' }}>Permissions management coming soon</div>;
 }
 
-function ActionsTab({ connector }: { connector: any }) {
+function ActionsTab({ connector }: { connector: unknown }) {
   return <div style={{ padding: '1.5rem', textAlign: 'center', color: '#6b7280' }}>Available actions coming soon</div>;
 }
 
@@ -382,7 +382,7 @@ function LogsTab({ connectorId }: { connectorId: string }) {
   return <div style={{ padding: '1.5rem', textAlign: 'center', color: '#6b7280' }}>Connection logs coming soon</div>;
 }
 
-export function ConnectorTestDialog({ connector, onClose }: { connector: any; onClose: () => void }) {
+export function ConnectorTestDialog({ connector, onClose }: { connector: unknown; onClose: () => void }) {
   return (
     <Modal
       isOpen={true}
@@ -407,7 +407,7 @@ export function ConnectorTestDialog({ connector, onClose }: { connector: any; on
   );
 }
 
-export function ConnectionModal({ connector, connection, onClose, onSubmit }: { connector: any; connection: any; onClose: () => void; onSubmit: (data: any) => Promise<void> }) {
+export function ConnectionModal({ connector, connection, onClose, onSubmit }: { connector: unknown; connection: unknown; onClose: () => void; onSubmit: (data: unknown) => Promise<void> }) {
   return (
     <Modal isOpen={true} onClose={onClose} title={connection ? 'Edit Connection' : 'Add Connection'} size="md">
       <form onSubmit={async (e) => { e.preventDefault(); await onSubmit(new FormData(e.currentTarget)); }}>
