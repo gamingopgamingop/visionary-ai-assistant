@@ -155,7 +155,7 @@ export class AuthServiceV2 {
     return apiClient.get<{ events: SecurityEventV2[]; total: number }>('/auth/security-events', query);
   }
 
-  async getRoles(): Promise<ApiResponse<{ id: string; name: string; description?: string; level: number }[]>> {
+  async getRoles(): Promise<ApiResponse<Array<{ id: string; name: string; description?: string; level: number; system?: boolean; permissions?: Array<{ id: string; name: string; resource: string; action: string }> }>>> {
     return apiClient.get('/auth/roles');
   }
 
