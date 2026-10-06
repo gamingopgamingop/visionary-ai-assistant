@@ -16,7 +16,25 @@ export interface ApiSuccessResponse<T> {
   meta?: Record<string, unknown>;
 }
 
-export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
+/**
+ * Flattened response shape.
+ *
+ * The API client resolves with whatever JSON body the server returned and
+ * only throws on non-OK HTTP status, so both fields are genuinely optional
+ * at runtime. This shape also keeps `.data` / `.error` access simple under
+ * the project's non-strict TS config, where boolean-literal discriminant
+ * unions do not narrow in else branches.
+ */
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: ApiErrorResponse['error'];
+  meta?: Record<string, unknown>;
+}
+
+export function isApiError<T>(r: ApiResponse<T>): r is ApiErrorResponse {
+  return r.success === false && typeof r.error === 'object';
+}
 
 export interface PaginationParams {
   page?: number;
