@@ -81,7 +81,9 @@ export interface ActionButtonProps {
   loading?: boolean;
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
-  children: React.ReactNode;
+  /** Optional text label — alternative to children for simple buttons */
+  label?: string;
+  children?: React.ReactNode;
   'aria-label'?: string;
 }
 

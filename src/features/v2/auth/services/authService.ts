@@ -174,6 +174,27 @@ export class AuthServiceV2 {
   async removeRole(userId: string, roleId: string): Promise<ApiResponse<void>> {
     return apiClient.delete(`/auth/users/${userId}/roles/${roleId}`);
   }
+
+  // ---- Role & permission administration (server-side verified) ----
+  async createRole(data: { name: string; description?: string; level: number }): Promise<ApiResponse<{ id: string }>> {
+    return apiClient.post<{ id: string }>('/auth/roles', data);
+  }
+
+  async updateRole(roleId: string, updates: { name?: string; description?: string; level?: number }): Promise<ApiResponse<void>> {
+    return apiClient.patch<void>(`/auth/roles/${roleId}`, updates);
+  }
+
+  async deleteRole(roleId: string): Promise<ApiResponse<void>> {
+    return apiClient.delete<void>(`/auth/roles/${roleId}`);
+  }
+
+  async assignPermissionsToRole(roleId: string, permissionIds: string[]): Promise<ApiResponse<void>> {
+    return apiClient.post<void>(`/auth/roles/${roleId}/permissions`, { permissionIds });
+  }
+
+  async removePermissionFromRole(roleId: string, permissionId: string): Promise<ApiResponse<void>> {
+    return apiClient.delete<void>(`/auth/roles/${roleId}/permissions/${permissionId}`);
+  }
 }
 
 export const authServiceV2 = new AuthServiceV2();

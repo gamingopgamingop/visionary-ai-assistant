@@ -417,7 +417,7 @@ function EditRoleModal({ role, onClose, onSubmit, onAssignPermissions, onRemoveP
   const [level, setLevel] = useState(role.level);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showPermissions, setShowPermissions] = useState(false);
+  const [activeModalTab, setActiveModalTab] = useState<'details' | 'permissions'>('details');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -436,7 +436,7 @@ function EditRoleModal({ role, onClose, onSubmit, onAssignPermissions, onRemoveP
 
   return (
     <Modal isOpen={true} onClose={onClose} title={`Edit ${role.name}`} size="lg">
-      <Tabs activeTab="details" onChange={setShowPermissions}>
+      <Tabs activeTab={activeModalTab} onChange={(id) => setActiveModalTab(id as 'details' | 'permissions')}>
         <TabList style={{ borderBottom: '1px solid #e5e7eb', marginBottom: '1.5rem' }}>
           <Tab id="details" label="Details" />
           <Tab id="permissions" label="Permissions" />
@@ -478,7 +478,7 @@ function EditRoleModal({ role, onClose, onSubmit, onAssignPermissions, onRemoveP
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1f2937', margin: 0 }}>Role Permissions</h3>
-              <button onClick={() => setShowPermissions(true)} style={{ padding: '0.5rem 1rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '0.375rem' }}>
+              <button onClick={() => setActiveModalTab('permissions')} style={{ padding: '0.5rem 1rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '0.375rem' }}>
                 Assign Permissions
               </button>
             </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActionButtonProps } from '../../types';
+import { ActionButtonProps } from '../types';
 
 interface ErrorDisplayProps {
   error: Error | null;

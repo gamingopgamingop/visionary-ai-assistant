@@ -471,8 +471,9 @@ export function AIChatPanel({ className = '' }: { className?: string }) {
           model: selectedModel,
           messages: [...messages, userMessage],
         });
-        if (response.success) {
-          setMessages(prev => [...prev, { role: 'assistant', content: response.data.choices[0]?.message?.content || '' }]);
+        if (response.success && response.data) {
+          const reply = response.data.choices[0]?.message?.content;
+          setMessages(prev => [...prev, { role: 'assistant', content: typeof reply === 'string' ? reply : '' }]);
         }
       }
     } catch (err) {

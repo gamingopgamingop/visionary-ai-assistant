@@ -12,6 +12,7 @@ interface TabsProps {
   onChange: (tabId: string) => void;
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
   orientation?: 'horizontal' | 'vertical';
 }
 
@@ -20,13 +21,14 @@ export function Tabs({
   onChange,
   children,
   className = '',
+  style,
   orientation = 'horizontal',
 }: TabsProps) {
   return (
     <TabsContext.Provider value={{ activeTab, onChange }}>
       <div
         className={`v2-tabs ${className}`}
-        style={{ display: 'flex', flexDirection: orientation }}
+        style={{ display: 'flex', flexDirection: orientation === 'vertical' ? 'column' : 'row', ...style }}
       >
         {children}
       </div>
@@ -147,3 +149,7 @@ export function TabPanel({ id, children, className = '', style }: TabPanelProps)
 }
 
 export const TabsComponents = { Tabs, TabList, Tab, TabPanels, TabPanel };
+
+export function createTabs() {
+  return { Root: Tabs, List: TabList, Tab, Panels: TabPanels, Panel: TabPanel };
+}

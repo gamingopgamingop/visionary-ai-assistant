@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { aiGatewayServiceV2, QuotaCheckResult, UsageRecord } from '../../ai/services/aiGatewayService';
-import { apiClient, ApiResponse } from '../../shared/services/apiClient';
+import { apiClient } from '../../shared/services/apiClient';
+import { ApiResponse } from '../../shared/types';
 
 const RESOURCE_LABELS: Record<string, string> = {
   ai_requests: 'AI Requests',

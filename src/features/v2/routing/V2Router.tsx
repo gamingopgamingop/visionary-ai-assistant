@@ -15,7 +15,7 @@ import { ProviderDashboard } from '../providers/components/ProviderDashboard';
 import { JobDashboard } from '../jobs/components/JobDashboard';
 import { RoleManager } from '../rbac/components/RoleManager';
 import { AIModelSelector, AIProviderSelector, AIChatPanel } from '../ai/components/AIChatPanel';
-import { V2ErrorBoundary } from '../shared/components/ErrorBoundary';
+import { ErrorBoundary as V2ErrorBoundary } from '../shared/components/ErrorBoundary';
 import { V2Layout } from './V2Layout';
 import { authServiceV2 } from '../auth/services/authService';
 
@@ -141,7 +141,7 @@ function SettingsPage() {
     authServiceV2
       .getAuthStatus()
       .then(response => {
-        if (response.success?.featureFlags) {
+        if (response.success && response.data?.featureFlags) {
           setFeatureFlags(response.data.featureFlags);
         }
       })

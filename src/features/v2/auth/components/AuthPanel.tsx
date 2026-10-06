@@ -88,7 +88,7 @@ function AuthHeader({ user, onRefresh }: { user: UserIdentityV2; onRefresh: () =
         </div>
         <div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1f2937', margin: '0 0 0.25rem' }}>
-            {user.metadata.fullName || user.email || 'User'}
+            {String(user.metadata.fullName || user.email || 'User')}
           </h2>
           <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
             {user.email || 'No email'}

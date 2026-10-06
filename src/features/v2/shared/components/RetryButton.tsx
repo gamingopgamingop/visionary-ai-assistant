@@ -190,7 +190,7 @@ export function RetryWithBackoff({
       maxRetries={maxRetries}
       {...props}
     >
-      {props.children}
+      {children}
       {nextRetryAt && (
         <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>
           Next retry in {Math.ceil((nextRetryAt - Date.now()) / 1000)}s

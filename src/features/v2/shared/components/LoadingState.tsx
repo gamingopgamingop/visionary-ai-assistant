@@ -48,7 +48,7 @@ export function LoadingState({
 
   return (
     <div style={containerStyle}>
-      <style jsx>{`
+      <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
@@ -85,11 +85,13 @@ export function InlineLoading({ size = 'sm', color = '#3b82f6' }: { size?: 'sm' 
 export function SkeletonLoader({
   width = '100%',
   height = '1rem',
+  marginBottom,
   borderRadius = '0.375rem',
   animated = true,
 }: {
   width?: string | number;
   height?: string | number;
+  marginBottom?: string;
   borderRadius?: string;
   animated?: boolean;
 }) {
@@ -98,6 +100,7 @@ export function SkeletonLoader({
       style={{
         width,
         height,
+        marginBottom,
         borderRadius,
         background: animated 
           ? 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)'
@@ -106,7 +109,7 @@ export function SkeletonLoader({
         animation: animated ? 'shimmer 1.5s infinite' : 'none',
       }}
     >
-      <style jsx>{`
+      <style>{`
         @keyframes shimmer {
           0% { background-position: 200% 0; }
           100% { background-position: -200% 0; }
