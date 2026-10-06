@@ -25,9 +25,9 @@ export function AuthPanel({ className = '' }: { className?: string }) {
     <div className={`v2-auth-panel ${className}`} style={{ maxWidth: '800px', margin: '0 auto' }}>
       <AuthHeader user={user!} onRefresh={refetch} />
       
-      <Tabs 
-        activeTab={activeTab} 
-        onChange={setActiveTab}
+      <Tabs
+        activeTab={activeTab}
+        onChange={(id) => setActiveTab(id as typeof activeTab)}
         className="v2-auth-tabs"
       >
         <TabList style={{ borderBottom: '1px solid #e5e7eb', marginBottom: '1.5rem' }}>

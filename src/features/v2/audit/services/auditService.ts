@@ -45,7 +45,7 @@ export interface AuditQuery extends PaginationParams {
 
 export class AuditServiceV2 {
   async queryAuditLogs(query: AuditQuery): Promise<ApiResponse<{ events: AuditLogEntry[]; total: number }>> {
-    return apiClient.get<{ events: AuditLogEntry[]; total: number }>('/audit', query);
+    return apiClient.get<{ events: AuditLogEntry[]; total: number }>('/audit', query as Record<string, unknown>);
   }
 
   async getAuditEvent(eventId: string): Promise<ApiResponse<AuditLogEntry>> {

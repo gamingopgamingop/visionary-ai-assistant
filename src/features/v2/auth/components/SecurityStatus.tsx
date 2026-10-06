@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuthV2, SecurityEventV2 } from '../hooks/useAuthV2';
+import { useAuthV2 } from '../hooks/useAuthV2';
+import { useSecurityEvents as useSecurityEventsHook } from '../hooks/useAuthV2';
+import { SecurityEventV2 } from '../services/authService';
 import { LoadingState, EmptyState, ErrorDisplay } from '../../shared/components';
 
 interface SecurityStatusProps {

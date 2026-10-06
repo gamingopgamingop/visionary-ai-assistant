@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { authServiceV2, UserIdentityV2, AuthStatusResponse, SessionDataV2, DeviceDataV2, SecurityEventV2 } from '../services/authService';
 
+// Re-export service types for component imports
+export type { UserIdentityV2, SessionDataV2, DeviceDataV2, SecurityEventV2, AuthStatusResponse };
+
 interface UseAuthV2Return {
   user: UserIdentityV2 | null;
   authenticated: boolean;

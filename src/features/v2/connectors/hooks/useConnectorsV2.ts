@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { connectorServiceV2, ConnectorConfig, ConnectorConnection, ConnectorActionResult, ConnectionTestResult } from '../services/connectorService';
+
+// Re-export connector types for component imports
+export type { ConnectorConfig, ConnectorConnection, ConnectorActionResult, ConnectionTestResult };
 import { PaginationParams } from '../../shared/types';
 
 interface UseConnectorsV2Return {

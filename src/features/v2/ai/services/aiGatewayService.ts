@@ -289,7 +289,7 @@ export class AiGatewayServiceV2 {
     return apiClient.post<ChatResponse>('/ai-gateway-v2/chat/completions', request);
   }
 
-  async chatCompletionStream(request: ChatRequest): Promise<ReadableStream<ChatResponse> | null> {
+  async chatCompletionStream(request: ChatRequest): Promise<ReadableStream<Uint8Array> | null> {
     const response = await fetch('/v2/ai-gateway-v2/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

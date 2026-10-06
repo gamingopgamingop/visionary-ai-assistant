@@ -1,28 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { createContext, useContext } from 'react';
 
-interface Tab {
-  id: string;
-  label: string;
-  disabled?: boolean;
+interface TabsContextValue {
+  activeTab: string;
+  onChange: (tabId: string) => void;
 }
 
-interface TabListProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-interface TabProps {
-  id: string;
-  label: string;
-  disabled?: boolean;
-  className?: string;
-}
-
-interface TabPanelProps {
-  id: string;
-  children: React.ReactNode;
-  className?: string;
-}
+const TabsContext = createContext<TabsContextValue | null>(null);
 
 interface TabsProps {
   activeTab: string;
@@ -32,84 +15,70 @@ interface TabsProps {
   orientation?: 'horizontal' | 'vertical';
 }
 
-export function Tabs({ 
-  activeTab, 
-  onChange, 
-  children, 
+export function Tabs({
+  activeTab,
+  onChange,
+  children,
   className = '',
   orientation = 'horizontal',
 }: TabsProps) {
   return (
-    <div 
-      className={`v2-tabs ${className}`}
-      role="tablist"
-      aria-orientation={orientation}
-      style={{ display: 'flex', flexDirection: orientation }}
-    >
-      {React.Children.map(children, child => {
-        if (!React.isValidElement(child)) return child;
-        return React.cloneElement(child, {
-          activeTab,
-          onChange,
-        } as any);
-      })}
-    </div>
+    <TabsContext.Provider value={{ activeTab, onChange }}>
+      <div
+        className={`v2-tabs ${className}`}
+        style={{ display: 'flex', flexDirection: orientation }}
+      >
+        {children}
+      </div>
+    </TabsContext.Provider>
   );
 }
 
-export function TabList({ children, className = '' }: TabListProps) {
+interface TabListProps {
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+export function TabList({ children, className = '', style }: TabListProps) {
   return (
-    <div 
-      role="presentation"
+    <div
+      role="tablist"
       className={`v2-tab-list ${className}`}
-      style={{ display: 'flex', gap: '0.25rem' }}
+      style={{ display: 'flex', gap: '0.25rem', ...style }}
     >
       {children}
     </div>
   );
 }
 
-export function Tab({ 
-  id, 
-  label, 
-  disabled = false, 
-  className = '',
-  activeTab,
-  onChange,
-}: TabProps & { activeTab: string; onChange: (id: string) => void }) {
-  const isActive = activeTab === id;
-  const [focused, setFocused] = useState(false);
+interface TabProps {
+  id: string;
+  label: string;
+  disabled?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+export function Tab({ id, label, disabled = false, className = '', style }: TabProps) {
+  const ctx = useContext(TabsContext);
+  const isActive = ctx?.activeTab === id;
 
   const handleClick = () => {
-    if (!disabled) {
-      onChange(id);
-    }
+    if (!disabled) ctx?.onChange(id);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (disabled) return;
-    
-    switch (e.key) {
-      case 'Enter':
-      case ' ':
-        e.preventDefault();
-        onChange(id);
-        break;
-      case 'ArrowRight':
-      case 'ArrowDown':
-        e.preventDefault();
-        // Focus next tab would be handled by parent
-        break;
-      case 'ArrowLeft':
-      case 'ArrowUp':
-        e.preventDefault();
-        // Focus previous tab would be handled by parent
-        break;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      ctx?.onChange(id);
     }
   };
 
   return (
     <button
+      type="button"
       role="tab"
       aria-selected={isActive}
       aria-disabled={disabled}
@@ -118,8 +87,6 @@ export function Tab({
       tabIndex={isActive ? 0 : -1}
       disabled={disabled}
       onClick={handleClick}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
       onKeyDown={handleKeyDown}
       className={`v2-tab ${className}`}
       style={{
@@ -134,6 +101,7 @@ export function Tab({
         opacity: disabled ? 0.5 : 1,
         transition: 'all 0.15s',
         whiteSpace: 'nowrap',
+        ...style,
       }}
       onMouseEnter={(e) => { if (!disabled && !isActive) e.currentTarget.style.backgroundColor = '#f3f4f6'; }}
       onMouseLeave={(e) => { if (!disabled && !isActive) e.currentTarget.style.backgroundColor = 'transparent'; }}
@@ -149,20 +117,19 @@ interface TabPanelsProps {
 }
 
 export function TabPanels({ children, className = '' }: TabPanelsProps) {
-  return (
-    <div className={`v2-tab-panels ${className}`}>
-      {children}
-    </div>
-  );
+  return <div className={`v2-tab-panels ${className}`}>{children}</div>;
 }
 
-export function TabPanel({ 
-  id, 
-  children, 
-  className = '',
-  activeTab,
-}: TabPanelProps & { activeTab: string }) {
-  const isActive = activeTab === id;
+interface TabPanelProps {
+  id: string;
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+export function TabPanel({ id, children, className = '', style }: TabPanelProps) {
+  const ctx = useContext(TabsContext);
+  const isActive = ctx?.activeTab === id;
 
   if (!isActive) return null;
 
@@ -172,22 +139,11 @@ export function TabPanel({
       id={`panel-${id}`}
       aria-labelledby={`tab-${id}`}
       className={`v2-tab-panel ${className}`}
-      style={{ animation: 'fadeIn 0.2s ease-out' }}
+      style={{ animation: 'fadeIn 0.2s ease-out', ...style }}
     >
       {children}
     </div>
   );
 }
 
-// Helper to compose Tabs with TabList, TabPanels, etc.
-export function createTabs() {
-  return {
-    Root: Tabs,
-    List: TabList,
-    Tab,
-    Panels: TabPanels,
-    Panel: TabPanel,
-  };
-}
-
-export const TabsComponents = createTabs();
+export const TabsComponents = { Tabs, TabList, Tab, TabPanels, TabPanel };
