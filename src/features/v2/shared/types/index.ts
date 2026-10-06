@@ -102,3 +102,96 @@ export type FeatureFlag =
 export interface FeatureFlags {
   [key: string]: boolean;
 }
+
+// ============================================================
+// Connector Types (shared between connector services and hooks)
+// ============================================================
+
+export type ConnectorAuthTypeV2 = 'oauth2' | 'api_key' | 'bearer_token' | 'basic' | 'none';
+
+export type ConnectorStatusV2 = 'pending' | 'active' | 'error' | 'revoked' | 'expired';
+
+export interface ConnectorConfig {
+  id: string;
+  name: string;
+  displayName: string;
+  description: string;
+  category: string;
+  version: string;
+  authType: ConnectorAuthTypeV2;
+  oauth2?: {
+    authorizationUrl: string;
+    tokenUrl: string;
+    scopes: string[];
+    pkce?: boolean;
+  };
+  apiKey?: {
+    headerName: string;
+    prefix?: string;
+  };
+  baseUrl: string;
+  endpoints: Record<string, ConnectorEndpointConfig>;
+  rateLimits?: {
+    requests: number;
+    windowMs: number;
+  };
+  requiredPermissions: string[];
+  optionalPermissions: string[];
+  enabled: boolean;
+  status?: ConnectorStatusV2;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ConnectorEndpointConfig {
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  path: string;
+  description?: string;
+  requiredPermissions?: string[];
+}
+
+export interface ConnectorConnection {
+  id: string;
+  userId: string;
+  connectorId: string;
+  name: string;
+  status: ConnectorStatusV2;
+  authType: ConnectorAuthTypeV2;
+  config: Record<string, unknown>;
+  credentials: ConnectorCredentials;
+  permissions: string[];
+  lastUsedAt?: string;
+  lastError?: string;
+  errorCount: number;
+  expiresAt?: string;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConnectorCredentials {
+  accessToken?: string;
+  refreshToken?: string;
+  apiKey?: string;
+  expiresAt?: number;
+  tokenType?: string;
+  scope?: string;
+  custom?: Record<string, unknown>;
+}
+
+export interface ConnectorActionResult {
+  success: boolean;
+  data?: unknown;
+  error?: {
+    code: string;
+    message: string;
+    retryable?: boolean;
+  };
+  metadata?: Record<string, unknown>;
+}
+
+export interface ConnectionTestResult {
+  success: boolean;
+  message?: string;
+  data?: Record<string, unknown>;
+  requestId?: string;
+}

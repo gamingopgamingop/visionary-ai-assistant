@@ -10,6 +10,15 @@ import {
   ConnectionTestResult,
 } from '../../shared/types';
 
+// Re-export connector types so hooks can import them from this service module
+export type {
+  ConnectorConfig,
+  ConnectorConnection,
+  ConnectorCredentials,
+  ConnectorActionResult,
+  ConnectionTestResult,
+};
+
 export interface ConnectorConfigResponse {
   connectors: ConnectorConfig[];
 }
