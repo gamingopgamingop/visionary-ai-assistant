@@ -71,6 +71,9 @@ export function UserRoleEditor({ userId, className = '', onClose }: UserRoleEdit
       } else {
         throw new Error('Failed to remove role');
       }
+    } catch (err) {
+      if (err instanceof Error) throw err;
+      throw err;
     }
   };
 

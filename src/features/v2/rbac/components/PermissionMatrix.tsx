@@ -83,6 +83,9 @@ export function PermissionMatrix({ className = '' }: PermissionMatrixProps) {
       } else {
         throw new Error('Failed to remove permission');
       }
+    } catch (err) {
+      if (err instanceof Error) throw err;
+      throw err;
     }
   };
 

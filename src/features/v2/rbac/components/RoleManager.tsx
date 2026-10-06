@@ -56,6 +56,9 @@ export function RoleManager({ className = '' }: RoleManagerProps) {
       } else {
         throw new Error(response.error?.message || 'Failed to create role');
       }
+    } catch (err) {
+      if (err instanceof Error) throw err;
+      throw err;
     }
   };
 
@@ -68,6 +71,9 @@ export function RoleManager({ className = '' }: RoleManagerProps) {
       } else {
         throw new Error(response.error?.message || 'Failed to update role');
       }
+    } catch (err) {
+      if (err instanceof Error) throw err;
+      throw err;
     }
   };
 
@@ -82,6 +88,9 @@ export function RoleManager({ className = '' }: RoleManagerProps) {
       } else {
         throw new Error(response.error?.message || 'Failed to delete role');
       }
+    } catch (err) {
+      if (err instanceof Error) throw err;
+      throw err;
     }
   };
 
@@ -93,6 +102,9 @@ export function RoleManager({ className = '' }: RoleManagerProps) {
       } else {
         throw new Error(response.error?.message || 'Failed to assign permissions');
       }
+    } catch (err) {
+      if (err instanceof Error) throw err;
+      throw err;
     }
   };
 
@@ -104,6 +116,9 @@ export function RoleManager({ className = '' }: RoleManagerProps) {
       } else {
         throw new Error(response.error?.message || 'Failed to remove permission');
       }
+    } catch (err) {
+      if (err instanceof Error) throw err;
+      throw err;
     }
   };
 
