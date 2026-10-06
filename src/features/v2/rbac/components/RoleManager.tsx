@@ -2,6 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useAuthV2 } from '../../auth/hooks/useAuthV2';
 import { LoadingState, EmptyState, ErrorDisplay, Modal, Tabs, TabList, Tab, TabPanels, TabPanel } from '../../shared/components';
 import { authServiceV2 } from '../../auth/services/authService';
+
+interface RoleWithPerms {
+  id: string;
+  name: string;
+  description?: string;
+  level: number;
+  system: boolean;
+  permissions?: Array<{ id: string; name: string; resource: string; action: string }>;
+}
 import { ActionButtonProps } from '../../shared/types';
 
 interface RoleManagerProps {
@@ -10,7 +19,7 @@ interface RoleManagerProps {
 
 export function RoleManager({ className = '' }: RoleManagerProps) {
   const { user, loading: authLoading } = useAuthV2();
-  const [roles, setRoles] = useState<unknown[]>([]);
+  const [roles, setRoles] = useState<RoleWithPerms[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [selectedRole, setSelectedRole] = useState<any | null>(null);
@@ -218,7 +227,7 @@ export function RoleManager({ className = '' }: RoleManagerProps) {
   );
 }
 
-function RoleCard({ role, onEdit, onDelete, disabled }: { role: unknown; onEdit: (role: unknown) => void; onDelete: (id: string) => void; disabled: boolean }) {
+function RoleCard({ role, onEdit, onDelete, disabled }: { role: RoleWithPerms; onEdit: (role: RoleWithPerms) => void; onDelete: (id: string) => void; disabled: boolean }) {
   return (
     <div style={{ 
       background: 'white', 

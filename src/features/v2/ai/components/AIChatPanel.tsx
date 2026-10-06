@@ -91,7 +91,7 @@ export function AIModelSelector({ onSelect, className = '' }: AIModelSelectorPro
   );
 }
 
-function ModelCard({ model, onSelect, selected }: { model: unknown; onSelect?: (model: unknown) => void; selected?: boolean }) {
+function ModelCard({ model, onSelect, selected }: { model: ModelConfig; onSelect?: (model: ModelConfig) => void; selected?: boolean }) {
   const capabilityIcons: Record<string, React.ReactNode> = {
     chat: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"/><path d="M12 17h.01"/></svg>,
     completion: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="4 7 12 15 20 7"/><path d="M14 2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16"/></svg>,
@@ -281,7 +281,7 @@ export function AIProviderSelector({ onSelect, className = '' }: { onSelect?: (p
   );
 }
 
-function ProviderCard({ provider, onSelect }: { provider: unknown; onSelect?: (provider: unknown) => void }) {
+function ProviderCard({ provider, onSelect }: { provider: ProviderConfig; onSelect?: (provider: ProviderConfig) => void }) {
   const statusColors = {
     healthy: { bg: '#dcfce7', color: '#166534', border: '#bbf7d0' },
     degraded: { bg: '#fef3c7', color: '#92400e', border: '#fde68a' },
