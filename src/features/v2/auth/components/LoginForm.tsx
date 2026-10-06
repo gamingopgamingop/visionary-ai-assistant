@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useAuthV2 } from '../hooks/useAuthV2';
+import { SignupForm } from './SignupForm';
+import { PasswordResetForm } from './PasswordResetForm';
 import { ActionButtonProps } from '../../shared/types';
 import { LoadingState, ErrorDisplay } from '../../shared/components';
 
@@ -117,7 +119,7 @@ export function LoginForm({
         </div>
 
         <ErrorDisplay error={formError ? new Error(formError) : null} onDismiss={() => setFormError(null)} />
-        <ErrorDisplay error={error} onDismiss={() => setError(null)} />
+        <ErrorDisplay error={error} onDismiss={() => {}} />
 
         <button
           type="submit"

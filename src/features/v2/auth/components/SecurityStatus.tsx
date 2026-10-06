@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuthV2 } from '../hooks/useAuthV2';
-import { useSecurityEvents as useSecurityEventsHook } from '../hooks/useAuthV2';
+import { useAuthV2, useSecurityEvents } from '../hooks/useAuthV2';
 import { SecurityEventV2 } from '../services/authService';
 import { LoadingState, EmptyState, ErrorDisplay } from '../../shared/components';
 
@@ -382,30 +381,4 @@ function formatRelativeTime(dateString: string): string {
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
   return new Date(dateString).toLocaleDateString();
-}
-
-function useSecurityEvents() {
-  const [events, setEvents] = useState<SecurityEventV2[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    const fetchEvents = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch('/v2/auth/security-events?limit=20', { credentials: 'include' });
-        if (res.ok) {
-          const data = await res.json();
-          setEvents(data.events || []);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to fetch security events'));
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchEvents();
-  }, []);
-
-  return { events, loading, error };
 }
