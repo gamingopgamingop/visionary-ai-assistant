@@ -158,12 +158,13 @@ export function AIProviderSelector({
                 </button>
               ))}
               {providers.filter(p => !enabledOnly || p.enabled).length === 0 && (
-              <div style={{ padding: '1rem', textAlign: 'center', color: '#6b7280' }}>
-                No providers available
-              </div>
-            )}
-          </div>
-        )}
+                <div style={{ padding: '1rem', textAlign: 'center', color: '#6b7280' }}>
+                  No providers available
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

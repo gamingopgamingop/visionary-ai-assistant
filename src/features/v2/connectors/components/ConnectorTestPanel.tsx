@@ -325,6 +325,7 @@ export function ConnectorTestPanel({ connectorId, connectorName, onClose, classN
             )}
           </div>
         </div>
+      </div>
       </Modal>
   );
 }

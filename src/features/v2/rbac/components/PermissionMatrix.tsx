@@ -68,8 +68,6 @@ export function PermissionMatrix({ className = '' }: PermissionMatrixProps) {
       } else {
         throw new Error(response.error?.message || 'Failed to assign permissions');
       }
-    } catch (err) {
-      throw err;
     } finally {
       setAssigning(false);
     }
@@ -85,8 +83,6 @@ export function PermissionMatrix({ className = '' }: PermissionMatrixProps) {
       } else {
         throw new Error('Failed to remove permission');
       }
-    } catch (err) {
-      throw err;
     }
   };
 

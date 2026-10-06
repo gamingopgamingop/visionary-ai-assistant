@@ -56,8 +56,6 @@ export function UserRoleEditor({ userId, className = '', onClose }: UserRoleEdit
       }
       setShowAssignModal(false);
       await fetchData();
-    } catch (err) {
-      throw err;
     } finally {
       setAssigning(false);
     }
@@ -73,8 +71,6 @@ export function UserRoleEditor({ userId, className = '', onClose }: UserRoleEdit
       } else {
         throw new Error('Failed to remove role');
       }
-    } catch (err) {
-      throw err;
     }
   };
 
