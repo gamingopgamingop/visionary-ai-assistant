@@ -269,7 +269,7 @@ function ActionCard({
             <div style={{ display: 'grid', gap: '0.75rem' }}>
               {actionParams.map(param => (
                 <div key={param.name}>
-                  <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.75rem', fontWeight: 500', color: '#374151' }}>
+                  <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.75rem', fontWeight: 500, color: '#374151' }}>
                     {param.name} {param.required && <span style={{ color: '#dc2626' }}> *</span>}
                   </label>
                   {param.type === 'boolean' ? (

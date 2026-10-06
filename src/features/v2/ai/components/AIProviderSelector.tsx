@@ -251,19 +251,19 @@ export function AIProviderCard({ provider, onSelect, showHealth = true }: { prov
 
       <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb', display: 'flex', gap: '1rem' }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          <span style={{ fontSize: '0.625rem', fontWeight: 500', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <span style={{ fontSize: '0.625rem', fontWeight: 500, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Priority
           </span>
           <span style={{ fontWeight: 600, color: '#1f2937' }}>{provider.priority}</span>
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          <span style={{ fontSize: '0.625rem', fontWeight: 500', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <span style={{ fontSize: '0.625rem', fontWeight: 500, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Health
           </span>
           <span style={{ fontWeight: 500, color: '#1f2937' }}>{provider.healthStatus || 'Unknown'}</span>
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          <span style={{ fontSize: '0.625rem', fontWeight: 500', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <span style={{ fontSize: '0.625rem', fontWeight: 500, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Models
           </span>
           <span style={{ fontWeight: 600, color: '#1f2937' }}>{provider.supportedModels.length}</span>

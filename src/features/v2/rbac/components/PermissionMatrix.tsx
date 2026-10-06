@@ -145,13 +145,13 @@ export function PermissionMatrix({ className = '' }: PermissionMatrixProps) {
             <tbody>
               {roles.map(role => (
                 <tr key={role.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td style={{ padding: '1rem', fontWeight: 500', color: '#1f2937', whiteSpace: 'nowrap', position: 'sticky', left: 0, background: 'white', zIndex: 5 }}>
+                  <td style={{ padding: '1rem', fontWeight: 500, color: '#1f2937', whiteSpace: 'nowrap', position: 'sticky', left: 0, background: 'white', zIndex: 5 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       {role.system && (
                         <span style={{ fontSize: '0.625rem', padding: '0.125rem 0.375rem', backgroundColor: '#fef3c7', color: '#92400e', borderRadius: '9999px', textTransform: 'uppercase' }}>System</span>
                       )}
                       <span style={{ fontWeight: 500 }}>{role.name}</span>
-                    </td>
+                    </div>
                   </td>
                   {permissions.map(perm => {
                     const hasPermission = role.permissions?.some((p: any) => p.id === perm.id);
@@ -211,14 +211,14 @@ export function PermissionMatrix({ className = '' }: PermissionMatrixProps) {
                           </button>
                         )}
                       </td>
-                    ))}
+                    );
+                  })}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-      </div>
     </div>
   );
 }

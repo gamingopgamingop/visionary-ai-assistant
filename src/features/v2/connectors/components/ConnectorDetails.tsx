@@ -349,7 +349,7 @@ function ConnectionsTab({ connections, onAdd, onEdit, onDelete, onTest }: {
             <tr key={conn.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
               <td style={{ padding: '1rem', fontWeight: 500, color: '#1f2937' }}>{conn.name}</td>
               <td style={{ padding: '1rem' }}>
-                <span style={{ padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 500' }}>
+                <span style={{ padding: '0.25rem 0.5rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 500 }}>
                   {conn.status}
                 </span>
               </td>
@@ -413,7 +413,7 @@ export function ConnectionModal({ connector, connection, onClose, onSubmit }: { 
       <form onSubmit={async (e) => { e.preventDefault(); await onSubmit(new FormData(e.currentTarget)); }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500' }}>Connection Name</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Connection Name</label>
             <input name="name" required style={{ width: '100%', padding: '0.625rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }} />
           </div>
           <div>

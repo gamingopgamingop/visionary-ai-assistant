@@ -543,7 +543,7 @@ export function AIChatPanel({ className = '' }: { className?: string }) {
                 <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{msg.content}</p>
               </div>
             </div>
-          ))}
+          ))
         )}
       </div>
 

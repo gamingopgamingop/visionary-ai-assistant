@@ -239,7 +239,7 @@ export function SessionList({ className = '' }: SessionListProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {...revokedSessions, ...expiredSessions}.map(session => (
+                  {[...revokedSessions, ...expiredSessions].map(session => (
                     <tr key={session.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
                       <td style={{ padding: '0.75rem 1rem', color: '#6b7280' }}>
                         {session.deviceId ? `Device: ${session.deviceId.slice(0, 8)}...` : 'Unknown device'}

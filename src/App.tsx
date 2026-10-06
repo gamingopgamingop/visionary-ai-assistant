@@ -17,6 +17,7 @@ import ApiKeys from "./pages/ApiKeys";
 import NotFound from "./pages/NotFound";
 import Navbar from "@/components/Navbar";
 import { AuthProvider } from "@/providers/AuthProvider";
+import V2Router from "./features/v2/routing/V2Router";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/s/:token" element={<SharedView />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/keys" element={<ApiKeys />} />
+            <Route path="/v2/*" element={<V2Router />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

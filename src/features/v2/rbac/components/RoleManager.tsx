@@ -362,7 +362,7 @@ function CreateRoleModal({ onClose, onSubmit }: { onClose: () => void; onSubmit:
           {error && <div style={{ padding: '0.75rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '0.375rem', color: '#991b1b' }}>{error}</div>}
           
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500' }}>Role Name</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Role Name</label>
             <input 
               value={name} 
               onChange={(e) => setName(e.target.value)} 
@@ -373,7 +373,7 @@ function CreateRoleModal({ onClose, onSubmit }: { onClose: () => void; onSubmit:
           </div>
           
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500' }}>Description</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Description</label>
             <textarea 
               value={description} 
               onChange={(e) => setDescription(e.target.value)} 
@@ -384,7 +384,7 @@ function CreateRoleModal({ onClose, onSubmit }: { onClose: () => void; onSubmit:
           </div>
           
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500' }}>Level</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Level</label>
             <input 
               type="number" 
               value={level} 
@@ -448,17 +448,17 @@ function EditRoleModal({ role, onClose, onSubmit, onAssignPermissions, onRemoveP
               {error && <div style={{ padding: '0.75rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '0.375rem', color: '#991b1b' }}>{error}</div>}
               
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500' }}>Role Name</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Role Name</label>
                 <input value={name} onChange={(e) => setName(e.target.value)} required style={{ width: '100%', padding: '0.625rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }} />
               </div>
               
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500' }}>Description</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Description</label>
                 <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} style={{ width: '100%', padding: '0.625rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }} />
               </div>
               
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500' }}>Level</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Level</label>
                 <input type="number" value={level} onChange={(e) => setLevel(parseInt(e.target.value) || 0)} min={1} max={99} required style={{ width: '100%', padding: '0.625rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }} />
               </div>
 

@@ -251,7 +251,7 @@ export function ConnectorTestPanel({ connectorId, connectorName, onClose, classN
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
                       <span style={{ fontWeight: 500, color: '#1f2937' }}>{step.name}</span>
-                      {step.status === 'running' && <span style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 500' }}>Running...</span>}
+                      {step.status === 'running' && <span style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 500 }}>Running...</span>}
                       {step.status === 'success' && <span style={{ fontSize: '0.75rem', color: '#10b981' }}>Completed</span>}
                       {step.status === 'error' && <span style={{ fontSize: '0.75rem', color: '#ef4444' }}>Failed</span>}
                       {step.duration && <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>{step.duration}ms</span>}

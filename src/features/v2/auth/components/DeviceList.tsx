@@ -204,7 +204,7 @@ function DeviceCard({ device, currentDeviceId, onRevoke, onTrust, revokingIds, t
         
         {!device.trusted && !device.revoked && !isCurrent && (
           <button
-            onClick={async () => {}}
+            onClick={handleTrust}
             disabled={isTrusting}
             style={{
               padding: '0.375rem 0.75rem',
@@ -214,9 +214,9 @@ function DeviceCard({ device, currentDeviceId, onRevoke, onTrust, revokingIds, t
               border: '1px solid #bfdbfe',
               fontSize: '0.75rem',
               fontWeight: 500,
-              cursor: 'pointer',
+              cursor: isTrusting ? 'not-allowed' : 'pointer',
+              opacity: isTrusting ? 0.7 : 1,
             }}
-            onClick={async () => {}}
           >
             {isTrusting ? 'Trusting...' : 'Mark as trusted'}
           </button>
@@ -224,7 +224,7 @@ function DeviceCard({ device, currentDeviceId, onRevoke, onTrust, revokingIds, t
         
         {!device.revoked && !isCurrent && (
           <button
-            onClick={async () => {}}
+            onClick={handleRevoke}
             disabled={isRevoking}
             style={{
               padding: '0.375rem 0.75rem',
@@ -234,7 +234,8 @@ function DeviceCard({ device, currentDeviceId, onRevoke, onTrust, revokingIds, t
               border: '1px solid #fecaca',
               fontSize: '0.75rem',
               fontWeight: 500,
-              cursor: 'pointer',
+              cursor: isRevoking ? 'not-allowed' : 'pointer',
+              opacity: isRevoking ? 0.7 : 1,
             }}
           >
             {isRevoking ? 'Removing...' : 'Remove'}
@@ -342,9 +343,9 @@ export function DeviceList({ className = '' }: { className?: string }) {
               currentDeviceId={devices.find(d => d.current)?.id}
               onRevoke={async (id) => {
                 setRevokingIds(prev => new Set(prev).add(id));
-                try { await revokeDevice(id); } 
+                try { await revokeDevice(id); }
                 finally { setRevokingIds(prev => { const n = new Set(prev); n.delete(id); return n; }); }
-              }
+              }}
               onTrust={async (id) => {
                 setTrustingIds(prev => new Set(prev).add(id));
                 try { await trustDevice(id); } 
