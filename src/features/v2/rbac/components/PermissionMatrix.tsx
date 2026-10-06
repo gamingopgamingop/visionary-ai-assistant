@@ -171,7 +171,7 @@ export function PermissionMatrix({ className = '' }: PermissionMatrixProps) {
                     </div>
                   </td>
                   {permissions.map(perm => {
-                    const hasPermission = role.permissions?.some((p: unknown) => p.id === perm.id);
+                    const hasPermission = role.permissions?.some((p) => p.id === perm.id);
                     return (
                       <td key={perm.id} style={{ padding: '0.5rem', textAlign: 'center', verticalAlign: 'middle' }}>
                         {hasPermission ? (

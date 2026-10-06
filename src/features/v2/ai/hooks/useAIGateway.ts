@@ -90,7 +90,7 @@ export function useAIGateway(): UseAIGatewayReturn {
     }
   };
 
-  const chatCompletion = async (request: unknown) => {
+  const chatCompletion = async (request: ChatRequest) => {
     setError(null);
     try {
       const response = await aiGatewayServiceV2.chatCompletion(request);

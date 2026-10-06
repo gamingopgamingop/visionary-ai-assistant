@@ -289,7 +289,7 @@ function ProviderCard({ provider, onSelect }: { provider: ProviderConfig; onSele
     unknown: { bg: '#f3f4f6', color: '#6b7280', border: '#e5e7eb' },
   };
 
-  const health = provider.healthStatus || 'unknown';
+  const health = (provider as ProviderConfig & { healthStatus?: string }).healthStatus || 'unknown';
   const colors = statusColors[health as keyof typeof statusColors] || statusColors.unknown;
 
   return (

@@ -420,7 +420,7 @@ function CreateRoleModal({ onClose, onSubmit }: { onClose: () => void; onSubmit:
   );
 }
 
-function EditRoleModal({ role, onClose, onSubmit, onAssignPermissions, onRemovePermission }: { role: unknown; onClose: () => void; onSubmit: (id: string, data: unknown) => Promise<void>; onAssignPermissions: (roleId: string, permissionIds: string[]) => Promise<void>; onRemovePermission: (roleId: string, permissionId: string) => Promise<void> }) {
+function EditRoleModal({ role, onClose, onSubmit, onAssignPermissions, onRemovePermission }: { role: RoleWithPerms; onClose: () => void; onSubmit: (id: string, data: { name: string; description?: string; level: number }) => Promise<void>; onAssignPermissions: (roleId: string, permissionIds: string[]) => Promise<void>; onRemovePermission: (roleId: string, permissionId: string) => Promise<void> }) {
   const [name, setName] = useState(role.name);
   const [description, setDescription] = useState(role.description || '');
   const [level, setLevel] = useState(role.level);
