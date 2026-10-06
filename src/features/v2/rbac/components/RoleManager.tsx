@@ -8,7 +8,7 @@ interface RoleWithPerms {
   name: string;
   description?: string;
   level: number;
-  system: boolean;
+  system?: boolean;
   permissions?: Array<{ id: string; name: string; resource: string; action: string }>;
 }
 import { ActionButtonProps } from '../../shared/types';

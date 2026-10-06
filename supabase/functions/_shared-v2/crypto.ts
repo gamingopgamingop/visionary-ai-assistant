@@ -98,15 +98,7 @@ export function base64UrlDecode(data: string): Uint8Array {
 
 export async function verifyHMAC(key: string | Uint8Array, data: string | Uint8Array, signature: string): Promise<boolean> {
     const expected = await hmacSha256(key, data);
-    const expectedBytes = new Uint8Array(expected.length / 2);
-    for (let i = 0; i < expected.length; i += 2) {
-        expectedBytes[i / 2] = parseInt(expected.slice(i, i + 2), 16);
-    }
-    const signatureBytes = new Uint8Array(signature.length / 2);
-    for (let i = 0; i < signature.length; i += 2) {
-        signatureBytes[i / 2] = parseInt(signature.slice(i, i + 2), 16);
-    }
-    return crypto.subtle.timingSafeEqual(expectedBytes, signatureBytes);
+    return constantTimeCompare(expected, signature.toLowerCase());
 }
 
 export function constantTimeCompare(a: string, b: string): boolean {
