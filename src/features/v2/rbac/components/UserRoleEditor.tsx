@@ -181,7 +181,7 @@ export function UserRoleEditor({ userId, className = '', onClose }: UserRoleEdit
                     })}
                   </div>
                 </div>
-              }
+              )}
 
               {availableRoles.length > 0 && (
                 <div style={{ padding: '1.5rem', borderTop: '1px solid #e5e7eb' }}>
