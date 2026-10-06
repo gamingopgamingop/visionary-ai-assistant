@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDevicesV2, DeviceDataV2 } from '../hooks/useAuthV2';
-import { LoadingState, EmptyState, ErrorDisplay } from '../../../shared/components';
+import { LoadingState, EmptyState, ErrorDisplay } from '../../shared/components';
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);

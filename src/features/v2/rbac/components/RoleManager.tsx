@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthV2 } from '../../auth/hooks/useAuthV2';
-import { LoadingState, EmptyState, ErrorDisplay, Modal, Tabs, TabList, Tab, TabPanels, TabPanel } from '../../../shared/components';
+import { LoadingState, EmptyState, ErrorDisplay, Modal, Tabs, TabList, Tab, TabPanels, TabPanel } from '../../shared/components';
 import { authServiceV2 } from '../../auth/services/authService';
-import { ActionButtonProps } from '../../../shared/types';
+import { ActionButtonProps } from '../../shared/types';
 
 interface RoleManagerProps {
   className?: string;
@@ -22,7 +22,7 @@ export function RoleManager({ className = '' }: RoleManagerProps) {
     setError(null);
     try {
       const response = await authServiceV2.getRoles();
-      if (response.success && response.data) {
+      if (response.success) {
         setRoles(response.data);
       } else {
         setError(new Error(response.error?.message || 'Failed to fetch roles'));

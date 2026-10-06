@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authServiceV2 } from '../../auth/services/authService';
-import { LoadingState, EmptyState, ErrorDisplay, Modal } from '../../../shared/components';
+import { LoadingState, EmptyState, ErrorDisplay, Modal } from '../../shared/components';
 
 interface PermissionMatrixProps {
   className?: string;
@@ -24,10 +24,10 @@ export function PermissionMatrix({ className = '' }: PermissionMatrixProps) {
         authServiceV2.getPermissions(),
       ]);
 
-      if (rolesRes.success && rolesRes.data) {
+      if (rolesRes.success) {
         setRoles(rolesRes.data);
       }
-      if (permsRes.success && permsRes.data) {
+      if (permsRes.success) {
         setPermissions(permsRes.data);
       }
     } catch (err) {

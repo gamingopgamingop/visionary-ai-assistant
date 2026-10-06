@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSessionsV2, SessionDataV2 } from '../hooks/useAuthV2';
-import { LoadingState, EmptyState, ErrorDisplay } from '../../../shared/components';
-import { ActionButtonProps } from '../../../shared/types';
+import { LoadingState, EmptyState, ErrorDisplay } from '../../shared/components';
+import { ActionButtonProps } from '../../shared/types';
 
 interface SessionListProps {
   className?: string;

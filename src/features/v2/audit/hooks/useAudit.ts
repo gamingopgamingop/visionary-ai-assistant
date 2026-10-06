@@ -15,7 +15,7 @@ export function useAuditLogs(initialQuery?: AuditQuery) {
     setError(null);
     try {
       const response = await auditServiceV2.queryAuditLogs(merged);
-      if (response.success && response.data) {
+      if (response.success) {
         setLogs(response.data.events);
         setTotal(response.data.total);
       } else {
@@ -39,7 +39,7 @@ export function useAuditLogs(initialQuery?: AuditQuery) {
     setLoading(true);
     try {
       const response = await auditServiceV2.queryAuditLogs(nextQuery);
-      if (response.success && response.data) {
+      if (response.success) {
         setLogs(prev => [...prev, ...response.data.events]);
         setTotal(response.data.total);
       }
@@ -70,7 +70,7 @@ export function useAuditStats() {
       setLoading(true);
       try {
         const response = await auditServiceV2.getAuditStats();
-        if (response.success && response.data) {
+        if (response.success) {
           setStats(response.data);
         } else {
           setError(new Error(response.error?.message || 'Failed to fetch audit stats'));

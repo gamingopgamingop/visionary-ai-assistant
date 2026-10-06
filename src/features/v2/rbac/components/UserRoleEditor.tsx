@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { authServiceV2 } from '../../auth/services/authService';
-import { LoadingState, EmptyState, ErrorDisplay, Modal } from '../../../shared/components';
+import { LoadingState, EmptyState, ErrorDisplay, Modal } from '../../shared/components';
 
 interface UserRoleEditorProps {
   userId: string;
@@ -26,10 +26,10 @@ export function UserRoleEditor({ userId, className = '', onClose }: UserRoleEdit
         authServiceV2.getRoles(),
       ]);
 
-      if (userRolesRes.success && userRolesRes.data) {
+      if (userRolesRes.success) {
         setUserRoles(userRolesRes.data);
       }
-      if (rolesRes.success && rolesRes.data) {
+      if (rolesRes.success) {
         setAvailableRoles(rolesRes.data.filter(r => !r.system));
       }
     } catch (err) {

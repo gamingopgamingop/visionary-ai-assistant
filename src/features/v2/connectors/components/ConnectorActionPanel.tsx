@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ConnectorConfigType, ConnectorConnection } from '../../../shared/types';
-import { ActionButtonProps } from '../../../shared/types';
+import { ConnectorConfigType, ConnectorConnection } from '../../shared/types';
+import { ActionButtonProps } from '../../shared/types';
 
 interface ConnectorActionPanelProps {
   connector: any;

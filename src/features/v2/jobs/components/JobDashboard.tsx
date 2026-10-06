@@ -43,12 +43,12 @@ export function JobDashboard({ className = '' }: JobDashboardProps) {
         jobsServiceV2.getQueueStats(),
       ]);
 
-      if (jobsRes.success && jobsRes.data) {
+      if (jobsRes.success) {
         setJobs(jobsRes.data);
       } else {
         setError(new Error(jobsRes.error?.message || 'Failed to fetch jobs'));
       }
-      if (statsRes.success && statsRes.data) {
+      if (statsRes.success) {
         setStats(statsRes.data);
       }
     } catch (err) {

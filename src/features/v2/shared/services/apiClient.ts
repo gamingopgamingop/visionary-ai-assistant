@@ -140,7 +140,7 @@ export function getFeatureFlags(): Promise<ApiResponse<FeatureFlags>> {
 export async function checkV2Enabled(feature: string): Promise<boolean> {
   try {
     const response = await getFeatureFlags();
-    if (response.success && response.data) {
+    if (response.success) {
       return response.data[feature] === true;
     }
   } catch {

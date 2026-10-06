@@ -6,8 +6,8 @@ import { PasswordResetForm } from './PasswordResetForm';
 import { SessionList } from './SessionList';
 import { DeviceList } from './DeviceList';
 import { SecurityStatus } from './SecurityStatus';
-import { LoadingState, EmptyState } from '../../../shared/components';
-import { Tab, TabList, TabPanel, Tabs } from '../../../shared/components/Tabs';
+import { LoadingState, EmptyState } from '../../shared/components';
+import { Tab, TabList, TabPanel, Tabs } from '../../shared/components/Tabs';
 
 export function AuthPanel({ className = '' }: { className?: string }) {
   const { user, authenticated, loading, refetch } = useAuthV2();

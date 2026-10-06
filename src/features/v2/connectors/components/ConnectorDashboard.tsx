@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useConnectorsV2, ConnectorConfig } from '../hooks/useConnectorsV2';
 import { useConnectorOAuth } from '../hooks/useConnectorsV2';
-import { LoadingState, EmptyState, ErrorDisplay, Modal } from '../../../shared/components';
+import { LoadingState, EmptyState, ErrorDisplay, Modal } from '../../shared/components';
 import { ConnectorConfig as ConnectorConfigType } from '../../shared/types';
 
 interface ConnectorDashboardProps {
@@ -64,7 +64,6 @@ export function ConnectorDashboard({ className = '' }: { className?: string }) {
                 border: '1px solid #d1d5db',
                 fontSize: '0.875rem',
               }}
-              placeholder="Search connectors..."
             />
             <svg 
               width="18" 
@@ -176,7 +175,7 @@ function ConnectorCard({
         }),
       });
       const data = await res.json();
-      if (data.success && data.data?.authorizationUrl) {
+      if (data.success?.authorizationUrl) {
         window.location.href = data.data.authorizationUrl;
       }
     } catch {

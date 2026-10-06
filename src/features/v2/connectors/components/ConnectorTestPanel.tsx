@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { useConnectorV2 } from '../hooks/useConnectorsV2';
-import { LoadingState, EmptyState, ErrorDisplay, Modal, Tabs, TabList, Tab, TabPanels, TabPanel } from '../../../shared/components';
+import { LoadingState, EmptyState, ErrorDisplay, Modal, Tabs, TabList, Tab, TabPanels, TabPanel } from '../../shared/components';
 import { connectorServiceV2, ConnectionTestResult, ConnectorActionResult } from '../services/connectorService';
-import { LoadingState, ErrorDisplay, Modal, Tabs, TabList, Tab, TabPanels, TabPanel } from '../../../shared/components';
+import { LoadingState, ErrorDisplay, Modal, Tabs, TabList, Tab, TabPanels, TabPanel } from '../../shared/components';
 
 interface ConnectorTestPanelProps {
   connectorId: string;

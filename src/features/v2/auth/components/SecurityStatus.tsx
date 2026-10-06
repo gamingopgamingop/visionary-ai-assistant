@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthV2, SecurityEventV2 } from '../hooks/useAuthV2';
-import { LoadingState, EmptyState, ErrorDisplay } from '../../../shared/components';
+import { LoadingState, EmptyState, ErrorDisplay } from '../../shared/components';
 
 interface SecurityStatusProps {
   className?: string;

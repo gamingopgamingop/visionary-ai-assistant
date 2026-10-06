@@ -5,7 +5,7 @@ import { useDevicesV2 } from '../../auth/hooks/useAuthV2';
 import { useSecurityEvents } from '../../auth/hooks/useAuthV2';
 import { SessionList } from '../../auth/components/SessionList';
 import { DeviceList } from '../../auth/components/DeviceList';
-import { LoadingState, EmptyState, ErrorDisplay } from '../../../shared/components';
+import { LoadingState, EmptyState, ErrorDisplay } from '../../shared/components';
 import { SecurityEventV2 } from '../../auth/services/authService';
 
 interface SecurityCenterProps {

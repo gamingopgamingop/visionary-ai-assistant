@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ConnectorConfigType } from '../../../shared/types';
-import { Modal, LoadingState, ErrorDisplay } from '../../../shared/components';
+import { ConnectorConfigType } from '../../shared/types';
+import { Modal, LoadingState, ErrorDisplay } from '../../shared/components';
 import { connectorServiceV2 } from '../services/connectorService';
 
 interface ConnectorOAuthDialogProps {
@@ -37,7 +37,7 @@ export function ConnectorOAuthDialog({ connector, isOpen, onClose, onSuccess }: 
         scopes: connector.oauth2?.scopes || [],
       });
 
-      if (response.success && response.data) {
+      if (response.success) {
         setAuthorizationUrl(response.data.authorizationUrl);
         setState(response.data.state);
         setStep('callback');

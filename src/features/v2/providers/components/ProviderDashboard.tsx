@@ -49,12 +49,12 @@ export function ProviderDashboard({ className = '' }: ProviderDashboardProps) {
         aiGatewayServiceV2.listModels({ status: 'active' }),
       ]);
 
-      if (providersRes.success && providersRes.data) {
+      if (providersRes.success) {
         setProviders(providersRes.data);
       } else {
         setError(new Error(providersRes.error?.message || 'Failed to fetch providers'));
       }
-      if (modelsRes.success && modelsRes.data) {
+      if (modelsRes.success) {
         setModels(modelsRes.data);
       }
     } catch (err) {
@@ -75,7 +75,7 @@ export function ProviderDashboard({ className = '' }: ProviderDashboardProps) {
       const response = await aiGatewayServiceV2.checkProviderHealth(provider.id);
       const latencyMs = Date.now() - startTime;
 
-      if (response.success && response.data) {
+      if (response.success) {
         const health = response.data;
         setTestResults(prev => ({
           ...prev,

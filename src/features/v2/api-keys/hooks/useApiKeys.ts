@@ -11,7 +11,7 @@ export function useApiKeysV2() {
     setError(null);
     try {
       const response = await apiKeysServiceV2.listApiKeys();
-      if (response.success && response.data) {
+      if (response.success) {
         setApiKeys(response.data);
       } else {
         setError(new Error(response.error?.message || 'Failed to fetch API keys'));
@@ -34,7 +34,7 @@ export function useApiKeysV2() {
   }> => {
     try {
       const response = await apiKeysServiceV2.createApiKey({ name, scopes, expiresInDays });
-      if (response.success && response.data) {
+      if (response.success) {
         await refetch();
         return { success: true, apiKey: response.data };
       }
@@ -64,7 +64,7 @@ export function useApiKeysV2() {
   }> => {
     try {
       const response = await apiKeysServiceV2.rotateApiKey(keyId);
-      if (response.success && response.data) {
+      if (response.success) {
         await refetch();
         return { success: true, newKey: response.data };
       }
@@ -109,7 +109,7 @@ export function useApiKeysScopes() {
       setLoading(true);
       try {
         const response = await apiKeysServiceV2.getAvailableScopes();
-        if (response.success && response.data) {
+        if (response.success) {
           setScopes(response.data);
         }
       } catch (err) {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { aiGatewayServiceV2, ProviderConfig, ModelConfig, ProviderHealth, ModelHealth, ChatRequest, ChatResponse, EmbeddingRequest, EmbeddingResponse, ImageRequest, ImageResponse, QuotaCheckResult, UsageRecord } from '../services/aiGatewayService';
-import { PaginationParams } from '../../../shared/types';
+import { PaginationParams } from '../../shared/types';
 
 interface UseAIGatewayReturn {
   providers: ProviderConfig[];
@@ -35,10 +35,10 @@ export function useAIGateway(): UseAIGatewayReturn {
         aiGatewayServiceV2.listModels({ status: 'active' }),
       ]);
       
-      if (providersRes.success && providersRes.data) {
+      if (providersRes.success) {
         setProviders(providersRes.data);
       }
-      if (modelsRes.success && modelsRes.data) {
+      if (modelsRes.success) {
         setModels(modelsRes.data);
       }
       
@@ -61,7 +61,7 @@ export function useAIGateway(): UseAIGatewayReturn {
     setError(null);
     try {
       const response = await aiGatewayServiceV2.listProviders(enabledOnly);
-      if (response.success && response.data) {
+      if (response.success) {
         setProviders(response.data);
       } else {
         setError(new Error(response.error?.message || 'Failed to fetch providers'));
@@ -78,7 +78,7 @@ export function useAIGateway(): UseAIGatewayReturn {
     setError(null);
     try {
       const response = await aiGatewayServiceV2.listModels(filters);
-      if (response.success && response.data) {
+      if (response.success) {
         setModels(response.data);
       } else {
         setError(new Error(response.error?.message || 'Failed to fetch models'));
@@ -252,7 +252,7 @@ export function useAIModels(): UseAIModelsReturn {
     setError(null);
     try {
       const response = await aiGatewayServiceV2.listModels(filters);
-      if (response.success && response.data) {
+      if (response.success) {
         setModels(response.data);
       } else {
         setError(new Error(response.error?.message || 'Failed to fetch models'));
@@ -307,7 +307,7 @@ export function useAIProviders(): UseAIProvidersReturn {
     setError(null);
     try {
       const response = await aiGatewayServiceV2.listProviders(enabledOnly);
-      if (response.success && response.data) {
+      if (response.success) {
         setProviders(response.data);
       } else {
         setError(new Error(response.error?.message || 'Failed to fetch providers'));
@@ -363,7 +363,7 @@ export function useAIQuotas(userId: string | null): UseAIQuotasReturn {
     setError(null);
     try {
       const response = await aiGatewayServiceV2.getAllQuotas(userId);
-      if (response.success && response.data) {
+      if (response.success) {
         setQuotas(response.data);
       } else {
         setError(new Error(response.error?.message || 'Failed to fetch quotas'));
@@ -430,10 +430,10 @@ export function useAIUsage(userId: string | null): UseAIUsageReturn {
         aiGatewayServiceV2.getUsageSummary(userId),
       ]);
       
-      if (usageRes.success && usageRes.data) {
+      if (usageRes.success) {
         setUsage(usageRes.data);
       }
-      if (summaryRes.success && summaryRes.data) {
+      if (summaryRes.success) {
         setSummary(summaryRes.data);
       }
       

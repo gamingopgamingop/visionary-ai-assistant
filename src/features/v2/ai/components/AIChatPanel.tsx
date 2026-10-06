@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAIGateway } from '../hooks/useAIGateway';
-import { LoadingState, EmptyState, ErrorDisplay, Modal, Tabs, TabList, Tab, TabPanels, TabPanel } from '../../../shared/components';
+import { LoadingState, EmptyState, ErrorDisplay, Modal, Tabs, TabList, Tab, TabPanels, TabPanel } from '../../shared/components';
 import { aiGatewayServiceV2, ProviderConfig, ModelConfig, ProviderHealth, ModelHealth, ChatRequest, ChatResponse, ChatMessage, QuotaCheckResult, UsageRecord } from '../services/aiGatewayService';
 
 interface AIModelSelectorProps {
@@ -471,7 +471,7 @@ export function AIChatPanel({ className = '' }: { className?: string }) {
           model: selectedModel,
           messages: [...messages, userMessage],
         });
-        if (response.success && response.data) {
+        if (response.success) {
           setMessages(prev => [...prev, { role: 'assistant', content: response.data.choices[0]?.message?.content || '' }]);
         }
       }

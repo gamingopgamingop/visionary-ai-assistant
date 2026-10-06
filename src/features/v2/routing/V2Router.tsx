@@ -141,7 +141,7 @@ function SettingsPage() {
     authServiceV2
       .getAuthStatus()
       .then(response => {
-        if (response.success && response.data?.featureFlags) {
+        if (response.success?.featureFlags) {
           setFeatureFlags(response.data.featureFlags);
         }
       })

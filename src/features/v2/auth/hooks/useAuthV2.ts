@@ -29,7 +29,7 @@ export function useAuthV2(): UseAuthV2Return {
     try {
       const response = await authServiceV2.getAuthStatus();
       
-      if (response.success && response.data) {
+      if (response.success) {
         setAuthenticated(response.data.authenticated);
         setUser(response.data.user || null);
         setFeatureFlags(response.data.featureFlags || {});
@@ -56,7 +56,7 @@ export function useAuthV2(): UseAuthV2Return {
     try {
       const response = await authServiceV2.login({ email, password });
       
-      if (response.success && response.data) {
+      if (response.success) {
         setUser(response.data.user);
         setAuthenticated(true);
         return { success: true };
@@ -77,7 +77,7 @@ export function useAuthV2(): UseAuthV2Return {
     try {
       const response = await authServiceV2.signup({ email, password, fullName });
       
-      if (response.success && response.data) {
+      if (response.success) {
         setUser(response.data.user);
         setAuthenticated(true);
         return { success: true };
@@ -164,7 +164,7 @@ export function useSessionsV2(): UseSessionsV2Return {
     try {
       const response = await authServiceV2.getSessions();
       
-      if (response.success && response.data) {
+      if (response.success) {
         setSessions(response.data);
       } else {
         setError(new Error(response.error?.message || 'Failed to fetch sessions'));
@@ -251,7 +251,7 @@ export function useDevicesV2(): UseDevicesV2Return {
     try {
       const response = await authServiceV2.getDevices();
       
-      if (response.success && response.data) {
+      if (response.success) {
         setDevices(response.data);
       } else {
         setError(new Error(response.error?.message || 'Failed to fetch devices'));
@@ -369,7 +369,7 @@ export function useSecurityEvents(initialParams?: {
         offset: mergedParams.offset,
       });
       
-      if (response.success && response.data) {
+      if (response.success) {
         setEvents(response.data.events);
         setTotal(response.data.total);
       } else {

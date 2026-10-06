@@ -55,7 +55,7 @@ export function AdminDashboard({ className = '' }: AdminDashboardProps) {
       setVerifying(true);
       try {
         const response = await adminServiceV2.checkAdminAccess();
-        if (response.success && response.data) {
+        if (response.success) {
           setAdminVerified(response.data.isAdmin === true);
         } else if (response.error?.statusCode === 403) {
           setAdminVerified(false);
@@ -82,8 +82,8 @@ export function AdminDashboard({ className = '' }: AdminDashboardProps) {
         adminServiceV2.getStats(),
         adminServiceV2.getSystemHealth(),
       ]);
-      if (statsRes.success && statsRes.data) setStats(statsRes.data);
-      if (healthRes.success && healthRes.data) setHealth(healthRes.data);
+      if (statsRes.success) setStats(statsRes.data);
+      if (healthRes.success) setHealth(healthRes.data);
       if (!statsRes.success && !healthRes.success) {
         setStatsError(new Error(statsRes.error?.message || 'Admin endpoints not available'));
       }
@@ -282,7 +282,7 @@ function UserManagement() {
     setError(null);
     try {
       const response = await adminServiceV2.listUsers({ limit: 50, search: search || undefined });
-      if (response.success && response.data) {
+      if (response.success) {
         setUsers(response.data);
       } else if (response.error?.statusCode === 404) {
         setError(new Error('User management endpoint not configured'));

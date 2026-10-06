@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAIGateway, ProviderConfig, ModelConfig } from '../hooks/useAIGateway';
 import { useAIModels } from '../hooks/useAIGateway';
-import { LoadingState, EmptyState, ErrorDisplay, Modal } from '../../../shared/components';
-import { ActionButtonProps } from '../../../shared/types';
+import { LoadingState, EmptyState, ErrorDisplay, Modal } from '../../shared/components';
+import { ActionButtonProps } from '../../shared/types';
 
 interface AIModelSelectorProps {
   value?: string;
@@ -326,7 +326,7 @@ export function AIChatPanel({
       });
 
       const data = await fetch.json();
-      if (data.success && data.data) {
+      if (data.success) {
         setMessages(prev => [...prev, { role: 'assistant', content: data.data.choices[0]?.message?.content || '' }]);
       }
     } catch (err) {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuthV2 } from '../hooks/useAuthV2';
-import { ActionButtonProps } from '../../../shared/types';
-import { LoadingState, ErrorDisplay } from '../../../shared/components';
+import { ActionButtonProps } from '../../shared/types';
+import { LoadingState, ErrorDisplay } from '../../shared/components';
 
 interface LoginFormProps {
   onSuccess?: () => void;

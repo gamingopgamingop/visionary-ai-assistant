@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ConnectorConfigType } from '../../../shared/types';
-import { LoadingState, EmptyState, ErrorDisplay, Modal, Tabs, TabList, Tab, TabPanels, TabPanel } from '../../../shared/components';
+import { ConnectorConfigType } from '../../shared/types';
+import { LoadingState, EmptyState, ErrorDisplay, Modal, Tabs, TabList, Tab, TabPanels, TabPanel } from '../../shared/components';
 import { connectorServiceV2, ConnectorConfigType, ConnectorConnection } from '../services/connectorService';
 import { useConnectorConnections, ConnectorConnection } from '../hooks/useConnectorsV2';
 import { useConnectorPermissions, ConnectorConnection as ConnectionType } from '../hooks/useConnectorsV2';

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { connectorServiceV2, ConnectorConfig, ConnectorConnection, ConnectorActionResult, ConnectionTestResult } from '../services/connectorService';
-import { PaginationParams } from '../../../shared/types';
+import { PaginationParams } from '../../shared/types';
 
 interface UseConnectorsV2Return {
   connectors: ConnectorConfig[];
@@ -23,7 +23,7 @@ export function useConnectorsV2(): UseConnectorsV2Return {
     try {
       const response = await connectorServiceV2.listConnectors(true);
       
-      if (response.success && response.data) {
+      if (response.success) {
         setConnectors(response.data);
       } else {
         setError(new Error(response.error?.message || 'Failed to fetch connectors'));
@@ -44,7 +44,7 @@ export function useConnectorsV2(): UseConnectorsV2Return {
     try {
       const response = await connectorServiceV2.testConnection(connectorId);
       
-      if (response.success && response.data) {
+      if (response.success) {
         return { success: response.data.success, error: response.data.message };
       } else {
         const errorMsg = response.error?.message || 'Failed to test connection';
@@ -61,7 +61,7 @@ export function useConnectorsV2(): UseConnectorsV2Return {
     try {
       const response = await connectorServiceV2.executeAction(connectorId, action, params);
       
-      if (response.success && response.data) {
+      if (response.success) {
         return { success: response.data.success, error: response.data.error?.message, data: response.data.data };
       } else {
         const errorMsg = response.error?.message || 'Action failed';
@@ -107,7 +107,7 @@ export function useConnectorConnections(): UseConnectorConnectionsReturn {
     try {
       const response = await connectorServiceV2.listConnections();
       
-      if (response.success && response.data) {
+      if (response.success) {
         setConnections(response.data);
       } else {
         setError(new Error(response.error?.message || 'Failed to fetch connections'));
@@ -128,7 +128,7 @@ export function useConnectorConnections(): UseConnectorConnectionsReturn {
     try {
       const response = await connectorServiceV2.createConnection(request);
       
-      if (response.success && response.data) {
+      if (response.success) {
         await refetch();
         return { success: true, data: response.data };
       } else {
@@ -146,7 +146,7 @@ export function useConnectorConnections(): UseConnectorConnectionsReturn {
     try {
       const response = await connectorServiceV2.updateConnection(connectionId, request);
       
-      if (response.success && response.data) {
+      if (response.success) {
         await refetch();
         return { success: true, data: response.data };
       } else {
@@ -182,7 +182,7 @@ export function useConnectorConnections(): UseConnectorConnectionsReturn {
     try {
       const response = await connectorServiceV2.testConnection(connectionId);
       
-      if (response.success && response.data) {
+      if (response.success) {
         return { success: response.data.success, error: response.data.message };
       } else {
         const errorMsg = response.error?.message || 'Failed to test connection';
@@ -199,7 +199,7 @@ export function useConnectorConnections(): UseConnectorConnectionsReturn {
     try {
       const response = await connectorServiceV2.executeAction(connectionId, action, params);
       
-      if (response.success && response.data) {
+      if (response.success) {
         return { success: response.data.success, error: response.data.error?.message, data: response.data.data };
       } else {
         const errorMsg = response.error?.message || 'Action failed';
@@ -247,7 +247,7 @@ export function useConnectorPermissions(connectionId: string | null): UseConnect
     try {
       const response = await connectorServiceV2.getConnectionPermissions(connId);
       
-      if (response.success && response.data) {
+      if (response.success) {
         setPermissions(response.data);
       } else {
         setError(new Error(response.error?.message || 'Failed to fetch permissions'));
@@ -328,7 +328,7 @@ export function useConnectorOAuth(): UseConnectorOAuthReturn {
     try {
       const response = await connectorServiceV2.initiateOAuth(request);
       
-      if (response.success && response.data) {
+      if (response.success) {
         return { success: true, data: response.data };
       } else {
         const errorMsg = response.error?.message || 'Failed to initiate OAuth';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAIProviders, ProviderConfig } from '../hooks/useAIGateway';
-import { LoadingState, EmptyState, ErrorDisplay } from '../../../shared/components';
+import { LoadingState, EmptyState, ErrorDisplay } from '../../shared/components';
 
 interface AIProviderSelectorProps {
   value?: string;

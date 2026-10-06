@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuthV2 } from '../hooks/useAuthV2';
-import { LoadingState, ErrorDisplay } from '../../../shared/components';
+import { LoadingState, ErrorDisplay } from '../../shared/components';
 
 interface SignupFormProps {
   onSuccess?: () => void;

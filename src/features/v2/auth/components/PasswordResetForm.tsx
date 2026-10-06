@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthV2 } from '../hooks/useAuthV2';
-import { ErrorDisplay } from '../../../shared/components';
+import { ErrorDisplay } from '../../shared/components';
 
 interface PasswordResetFormProps {
   onSwitchToLogin?: () => void;

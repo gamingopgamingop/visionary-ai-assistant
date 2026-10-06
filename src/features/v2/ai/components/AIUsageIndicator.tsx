@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAIUsage, UseAIUsageReturn } from '../hooks/useAIGateway';
-import { LoadingState, EmptyState, ErrorDisplay } from '../../../shared/components';
+import { LoadingState, EmptyState, ErrorDisplay } from '../../shared/components';
 
 interface AIUsageIndicatorProps {
   userId: string;

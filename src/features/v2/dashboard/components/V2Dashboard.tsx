@@ -34,7 +34,7 @@ export function V2Dashboard({ className = '' }: V2DashboardProps) {
   const fetchJobs = useCallback(async () => {
     try {
       const response = await jobsServiceV2.getQueueStats();
-      if (response.success && response.data) {
+      if (response.success) {
         setQueueStats(response.data);
         setJobsConfigured(true);
       } else if (response.error?.statusCode === 404) {

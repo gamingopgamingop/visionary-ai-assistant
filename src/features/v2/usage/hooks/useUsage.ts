@@ -26,7 +26,7 @@ export function useUsageQuotas(userId: string | null) {
     setError(null);
     try {
       const response = await aiGatewayServiceV2.getAllQuotas(userId);
-      if (response.success && response.data) {
+      if (response.success) {
         setQuotas(response.data);
       } else if (response.error?.statusCode === 404 || response.error?.code === 'NOT_FOUND') {
         setQuotas([]);
@@ -68,9 +68,9 @@ export function useUsageSummary(userId: string | null) {
         aiGatewayServiceV2.getUsage(userId, undefined, undefined, undefined, 50),
       ]);
 
-      if (summaryRes.success && summaryRes.data) setSummary(summaryRes.data);
-      if (dailyRes.success && dailyRes.data) setDaily(dailyRes.data);
-      if (recordsRes.success && recordsRes.data) setRecords(recordsRes.data);
+      if (summaryRes.success) setSummary(summaryRes.data);
+      if (dailyRes.success) setDaily(dailyRes.data);
+      if (recordsRes.success) setRecords(recordsRes.data);
 
       const allFailed = !summaryRes.success && !dailyRes.success && !recordsRes.success;
       if (allFailed) {
