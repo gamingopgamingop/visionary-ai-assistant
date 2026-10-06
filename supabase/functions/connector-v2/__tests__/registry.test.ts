@@ -1,9 +1,5 @@
-import { 
-    ConnectorRegistry,
-    ConnectorConfig,
-    ConnectorAuthType,
-    ConnectorStatus 
-} from '../types.ts';
+import { ConnectorRegistry } from '../registry.ts';
+import type { ConnectorConfig, ConnectorAuthType } from '../types.ts';
 
 Deno.test("ConnectorRegistry - singleton", () => {
     const registry1 = ConnectorRegistry.getInstance();
